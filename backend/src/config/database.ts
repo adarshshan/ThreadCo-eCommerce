@@ -1,21 +1,17 @@
-import { MongoClient, Db } from "mongodb";
+import mongoose from "mongoose";
 
-const uri = process.env.MONGODB_URI;
-let db: Db | null = null;
-
-export async function connectToDatabase(): Promise<Db> {
-  if (db) return db;
-
+export async function connectToDatabase(): Promise<typeof mongoose> {
+  const uri = process.env.MONGODB_URI;
   if (!uri) {
     throw new Error("MONGODB_URI is not defined in the environment variables");
   }
 
-  const client = new MongoClient(uri);
+  console.log("Attempting to connect to MongoDB with URI:", uri);
+
   try {
-    await client.connect();
-    db = client.db();
+    const connection = await mongoose.connect(uri);
     console.log("Connected to MongoDB");
-    return db;
+    return connection;
   } catch (error) {
     console.error("Failed to connect to MongoDB", error);
     throw error;

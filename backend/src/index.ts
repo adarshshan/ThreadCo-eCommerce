@@ -8,6 +8,9 @@ import { connectToDatabase } from "./config/database";
 import { ProductRepository } from "./repositories/ProductRepository";
 import { ProductService } from "./services/ProductService";
 import { productRoutes } from "./routes/ProductRoutes";
+import { UserRepository } from "./repositories/UserRepository";
+import { UserService } from "./services/UserService";
+import { userRoutes } from "./routes/UserRoutes";
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -16,7 +19,10 @@ app.use(express.json());
 
 // Initialize ProductService and ProductRepository
 const productRepository = new ProductRepository();
+const userRepository = new UserRepository();
+
 const productService = new ProductService(productRepository);
+const userService = new UserService(userRepository);
 
 // Set up Apollo Server
 const startApolloServer = async () => {
@@ -32,12 +38,14 @@ const startApolloServer = async () => {
     expressMiddleware(server, {
       context: async () => ({
         productService,
+        userService,
       }),
     })
   );
 
   // Keep REST routes if you want to support both REST and GraphQL
   app.use("/api/products", productRoutes);
+  app.use("/api/users", userRoutes);
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
