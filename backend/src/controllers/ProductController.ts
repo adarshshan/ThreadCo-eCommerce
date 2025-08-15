@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ProductService } from "../services/ProductService";
+import cloudinary from "../config/cloudinary";
 
 export class ProductController {
   constructor(private productService: ProductService) {}
@@ -28,8 +29,26 @@ export class ProductController {
 
   async createProduct(req: Request, res: Response): Promise<void> {
     try {
-      const product = await this.productService.createProduct(req.body);
-      res.status(201).json(product);
+      if (!req.file) {
+        res.status(400).json({ message: "No image file uploaded" });
+        return;
+      }
+
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { resource_type: "auto" },
+        async (error, result) => {
+          if (error || !result) {
+            res.status(500).json({ message: "Error uploading to Cloudinary" });
+            return;
+          }
+
+          const productData = { ...req.body, image: result.secure_url };
+          const product = await this.productService.createProduct(productData);
+          res.status(201).json(product);
+        }
+      );
+
+      uploadStream.end(req.file.buffer);
     } catch (error) {
       res.status(500).json({ message: "Error creating product" });
     }
