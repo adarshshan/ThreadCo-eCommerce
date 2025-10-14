@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, Box } from '@mui/material';
+import React from "react";
+import { Modal, Box } from "@mui/material";
 
 interface CustomModalProps {
   open: boolean;
@@ -8,19 +8,23 @@ interface CustomModalProps {
 }
 
 const style = {
-  position: 'absolute' as 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 'auto',
+  position: "absolute" as "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: "auto",
   minWidth: 400,
-  bgcolor: 'background.paper',
-  borderRadius: '16px',
+  bgcolor: "background.paper",
+  borderRadius: "16px",
   boxShadow: 24,
   p: 4,
 };
 
-const CustomModal: React.FC<CustomModalProps> = ({ open, onClose, children }) => {
+const CustomModal: React.FC<CustomModalProps> = ({
+  open,
+  onClose,
+  children,
+}) => {
   return (
     <Modal
       open={open}
@@ -28,9 +32,7 @@ const CustomModal: React.FC<CustomModalProps> = ({ open, onClose, children }) =>
       aria-labelledby="modal-modal-title"
       aria-describedby="modal-modal-description"
     >
-      <Box sx={style}>
-        {children}
-      </Box>
+      <Box sx={style}>{children}</Box>
     </Modal>
   );
 };

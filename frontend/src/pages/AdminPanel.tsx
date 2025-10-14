@@ -10,6 +10,8 @@ import type { Product } from "../types/Product";
 import ProductForm from "../components/ProductForm";
 import CustomModal from "../components/Modal";
 import { useStore } from "../store/useStore";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const AdminPanel: React.FC = () => {
   const queryClient = useQueryClient();
@@ -31,8 +33,7 @@ const AdminPanel: React.FC = () => {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: (data: { id: string; productData: Partial<Product> }) =>
-      updateProduct(data.id, data.productData),
+    mutationFn: updateProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       closeModal();
@@ -63,11 +64,10 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleSaveProduct = (
-    productData: Omit<Product, "_id" | "createdAt" | "updatedAt">
-  ) => {
+  const handleSaveProduct = (productData: FormData) => {
     if (selectedProduct) {
-      updateProductMutation.mutate({ id: selectedProduct._id, productData });
+      productData.append("_id", String(selectedProduct?._id));
+      updateProductMutation.mutate(productData);
     } else {
       createProductMutation.mutate(productData);
     }
@@ -101,22 +101,26 @@ const AdminPanel: React.FC = () => {
           <tbody>
             {products?.map((product) => (
               <tr key={product._id}>
-                <td className="py-2 px-4 border-b">{product.name}</td>
-                <td className="py-2 px-4 border-b">${product.price}</td>
+                <td className="py-2 ps-8 pe-4 border-b">{product.name}</td>
+                <td className="py-2 px-4 border-b text-center">
+                  ${product.price}
+                </td>
                 <td className="py-2 px-4 border-b">{product.category}</td>
-                <td className="py-2 px-4 border-b">{product.stock}</td>
-                <td className="py-2 px-4 border-b">
+                <td className="py-2 px-4 border-b text-center">
+                  {product.stock}
+                </td>
+                <td className="py-2 px-4 border-b text-center">
                   <button
                     onClick={() => handleEditProduct(product)}
-                    className="bg-green-500 text-white px-2 py-1 rounded mr-2"
+                    className="text-green-500 px-2 py-1 rounded mr-2"
                   >
-                    Edit
+                    <EditIcon />
                   </button>
                   <button
-                    onClick={() => handleDeleteProduct(product._id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
+                    onClick={() => handleDeleteProduct(String(product._id))}
+                    className="text-red-500 px-2 py-1 rounded"
                   >
-                    Delete
+                    <DeleteIcon />
                   </button>
                 </td>
               </tr>

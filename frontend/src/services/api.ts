@@ -1,23 +1,37 @@
 import axios from 'axios';
 import type { Product } from '../types/Product';
 
-const API_URL = 'http://localhost:3000/api';
+const VITE_API_URL = import.meta.env.VITE_API_URL
 
 export const getProducts = async (): Promise<Product[]> => {
-  const response = await axios.get(`${API_URL}/products`);
+  const response = await axios.get(`${VITE_API_URL}/products`);
   return response.data;
 };
 
-export const createProduct = async (productData: Omit<Product, '_id' | 'createdAt' | 'updatedAt'>): Promise<Product> => {
-  const response = await axios.post(`${API_URL}/products`, productData);
+export const getProductsById = async (id: string): Promise<Product> => {
+  const response = await axios.get(`${VITE_API_URL}/products/${id}`);
   return response.data;
 };
 
-export const updateProduct = async (id: string, productData: Partial<Product>): Promise<Product> => {
-  const response = await axios.put(`${API_URL}/products/${id}`, productData);
+export const createProduct = async (productData: FormData): Promise<Product> => {
+  const response = await axios.post(`${VITE_API_URL}/products`, productData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const updateProduct = async (productData: FormData): Promise<Product> => {
+  const id = productData.get('_id') as string;
+  const response = await axios.put(`${VITE_API_URL}/products/${id}`, productData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {
-  await axios.delete(`${API_URL}/products/${id}`);
+  await axios.delete(`${VITE_API_URL}/products/${id}`);
 };

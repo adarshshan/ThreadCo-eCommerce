@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { TextField, Button, Box, Typography, Paper } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Paper,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import type { Product } from "../types/Product";
 
 interface ProductFormProps {
   product?: Product | null;
-  onSave: (product: Omit<Product, "_id" | "createdAt" | "updatedAt">) => void;
+  onSave: (product: FormData) => void;
   onCancel: () => void;
 }
 
@@ -13,47 +21,122 @@ const ProductForm: React.FC<ProductFormProps> = ({
   onSave,
   onCancel,
 }) => {
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
+  const [name, setName] = useState<string>("");
+  const [price, setPrice] = useState<number | null>(null);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [stock, setStock] = useState(0);
-  const [image, setImage] = useState<File | null | undefined>(null);
+  const [stock, setStock] = useState<number | null>(null);
+  const [images, setImages] = useState<(File | string | null | undefined)[]>(
+    []
+  );
+  const [picMessage, setPicMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) {
       setName(product.name);
       setPrice(product.price);
-      setDescription(product.description);
-      setCategory(product.category);
-      setStock(product.stock);
-      setImage(null); // Reset image as it's not part of the original product
+      setDescription(product?.description ?? "");
+      setCategory(product?.category ?? "");
+      setStock(product?.stock ?? 0);
+      setImages(product.images ?? []);
     } else {
       setName("");
-      setPrice(0);
+      setPrice(null);
       setDescription("");
       setCategory("");
-      setStock(0);
-      setImage(null);
+      setStock(null);
+      setImages([]);
     }
   }, [product]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadImage = (pic: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!pic) {
+        setPicMessage("Please Select an image!");
+        return reject("No image selected");
+      }
+      if (pic.type !== "image/jpeg" && pic.type !== "image/png") {
+        setPicMessage("please select a valid image.");
+        return reject("Invalid image type");
+      }
+
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const data = new FormData();
+      data.append("file", pic);
+      data.append("upload_preset", uploadPreset);
+      data.append("cloud_name", cloudName);
+
+      fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "post",
+        body: data,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.url) {
+            resolve(data.url.toString());
+          } else {
+            reject("Cloudinary upload failed");
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          reject(err);
+        });
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ name, price, description, category, stock, image });
+    setPicMessage(null);
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("price", price ? price.toString() : "0");
+    formData.append("description", description);
+    formData.append("category", category);
+    formData.append("stock", stock ? stock.toString() : "0");
+
+    if (images.length > 0) {
+      try {
+        // Separate existing image URLs from new File objects
+        const existingImageUrls = images.filter(
+          (img): img is string => typeof img === "string"
+        );
+        const newImageFiles = images.filter(
+          (img): img is File => img instanceof File
+        );
+
+        // Upload only the new files
+        const newImageUrls = await Promise.all(
+          newImageFiles.map((file) => uploadImage(file))
+        );
+
+        // Combine old and new URLs
+        const allImageUrls = [...existingImageUrls, ...newImageUrls];
+
+        if (allImageUrls.length > 0)
+          formData.append("images", JSON.stringify(allImageUrls));
+      } catch (error) {
+        setPicMessage("Image upload failed. Please try again.");
+        return;
+      }
+    }
+    onSave(formData);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    console.log("................file............");
-    console.log(file);
-    setImage(file);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setImages((prevImages) => [...prevImages, ...files]);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
   return (
     <Paper
       elevation={3}
-      className="p-6 w-full max-w-lg mx-auto bg-white rounded-xl shadow-lg"
+      className="w-full max-w-lg mx-auto !shadow-none !bg-transparent rounded-xl"
     >
       <Typography
         variant="h5"
@@ -150,11 +233,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
             variant="body1"
             className="text-gray-600 font-semibold mb-2"
           >
-            Product Image
+            Product Images
           </Typography>
           <input
-            id="image"
+            id="images"
             type="file"
+            multiple
             onChange={handleImageChange}
             className="block w-full text-sm text-gray-500
               file:mr-4 file:py-2 file:px-4
@@ -163,6 +247,33 @@ const ProductForm: React.FC<ProductFormProps> = ({
               file:bg-blue-50 file:text-blue-700
               hover:file:bg-blue-100"
           />
+          <div className="flex gap-2 mt-2">
+            {images.map((image, index) => {
+              const imageUrl =
+                typeof image === "string"
+                  ? image
+                  : URL.createObjectURL(image as Blob);
+              return (
+                <Box key={index} className="relative">
+                  <img
+                    src={imageUrl}
+                    alt={`preview ${index}`}
+                    className="w-20 h-20 object-cover rounded"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-0 right-0 bg-red-500 text-white hover:bg-red-700 p-0.5"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              );
+            })}
+          </div>
+          <Typography variant="body1" className="text-red-600 font-normal mb-2">
+            {picMessage}
+          </Typography>
         </Box>
         <Box className="flex justify-between mt-6">
           <Button

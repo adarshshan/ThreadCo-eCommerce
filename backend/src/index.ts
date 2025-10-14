@@ -45,6 +45,7 @@ const startApolloServer = async () => {
     })
   );
 
+
   // Keep REST routes if you want to support both REST and GraphQL
   app.use("/api/products", productRoutes);
   app.use("/api/users", userRoutes);

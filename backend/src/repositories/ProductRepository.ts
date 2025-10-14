@@ -19,7 +19,7 @@ export class ProductRepository implements IProductRepository {
   }
 
   async findAll(): Promise<ProductDocument[]> {
-    return (await ProductModel.find().exec()) as ProductDocument[];
+    return await ProductModel.find().sort({ createdAt: -1 }).exec() as ProductDocument[];
   }
 
   async findById(id: string): Promise<ProductDocument | null> {

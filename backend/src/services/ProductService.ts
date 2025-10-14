@@ -2,7 +2,7 @@ import { ProductDocument } from "../models/productsSchema";
 import { IProductRepository } from "../repositories/ProductRepository";
 
 export class ProductService {
-  constructor(private productRepository: IProductRepository) {}
+  constructor(private productRepository: IProductRepository) { }
 
   async getAllProducts(): Promise<ProductDocument[]> {
     return this.productRepository.findAll();
