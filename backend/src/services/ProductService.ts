@@ -1,19 +1,21 @@
-import { Product } from "../models/products";
+import { ProductDocument } from "../models/productsSchema";
 import { IProductRepository } from "../repositories/ProductRepository";
 
 export class ProductService {
-  constructor(private productRepository: IProductRepository) {}
+  constructor(private productRepository: IProductRepository) { }
 
-  async getAllProducts(): Promise<Product[]> {
+  async getAllProducts(): Promise<ProductDocument[]> {
     return this.productRepository.findAll();
   }
 
-  async getProductById(id: string): Promise<Product | null> {
+  async getProductById(id: string): Promise<ProductDocument | null> {
     return this.productRepository.findById(id);
   }
 
-  async createProduct(productData: Omit<Product, "_id">): Promise<Product> {
-    const product: Product = {
+  async createProduct(
+    productData: Omit<ProductDocument, "_id">
+  ): Promise<ProductDocument> {
+    const product: Omit<ProductDocument, "_id"> = {
       ...productData,
     };
     return this.productRepository.create(product);
@@ -21,8 +23,8 @@ export class ProductService {
 
   async updateProduct(
     id: string,
-    productData: Partial<Product>
-  ): Promise<Product | null> {
+    productData: Partial<ProductDocument>
+  ): Promise<ProductDocument | null> {
     return this.productRepository.update(id, productData);
   }
 

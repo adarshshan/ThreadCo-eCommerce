@@ -11,7 +11,7 @@ const Cart: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto  py-4 px-4 sm:py-8">
       <h2 className="text-2xl font-bold mb-6 text-center">Your Cart</h2>
       {cartItems.length === 0 ? (
         <p className="text-center">Your cart is empty</p>
