@@ -1,5 +1,4 @@
 import ProductCard from "./ProductCard";
-// import products from "../data/products.json";
 import { useQuery } from "@tanstack/react-query";
 import type { Product } from "../types/Product";
 import { getProducts } from "../services/api";
