@@ -1,8 +1,99 @@
 import { IUserRepository } from "../repositories/UserRepository";
 import { UserDocument } from "../models/UserSchema";
+import Encrypt from "../utils/comparePassword";
+import { CreateJWT } from "../utils/generateToken";
+import { DatabaseError, NotFoundError } from "../utils/errors";
 
 export class UserService {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(
+    private userRepository: IUserRepository,
+    private encrypt: Encrypt,
+    private createJWT: CreateJWT,
+  ) {}
+
+  async userLogin(email: string, password: string) {
+    try {
+      const user = await this.userRepository.findByEmail(email);
+
+      if (user?.status === "blocked") {
+        return {
+          status: 401,
+          data: {
+            success: false,
+            message: "You have been blocked by the admin!",
+            token: undefined,
+            data: user,
+            refreshToken: undefined,
+          },
+        };
+      }
+      if (user?.password && password) {
+        const passwordMatch = await this.encrypt.compare(
+          password,
+          user?.password as string,
+        );
+        if (passwordMatch) {
+          const token = this.createJWT.generateToken(user?.id);
+          const refreshToken = this.createJWT.generateRefreshToken(user?.id);
+          return {
+            status: 200,
+            data: {
+              success: true,
+              message: "Authentication Successful !",
+              data: user,
+              userId: user.id,
+              token: token,
+              refreshToken: refreshToken,
+            },
+          };
+        } else {
+          return {
+            status: 401,
+            data: {
+              success: false,
+              message: "Authentication failed...",
+            },
+          };
+        }
+      } else {
+        // Should not happen if emailExistCheck passes and user has password
+        return {
+          status: 401,
+          data: {
+            success: false,
+            message: "Authentication failed due to missing password.",
+          },
+        };
+      }
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return {
+          status: 401,
+          data: {
+            success: false,
+            message: "Authentication failed: User not found.",
+          },
+        };
+      } else if (error instanceof DatabaseError) {
+        console.error("Database error in userLogin:", error);
+        return {
+          status: 500,
+          data: {
+            success: false,
+            message: "Internal server Error during login!",
+          },
+        };
+      }
+      console.error("Unexpected error in userLogin:", error);
+      return {
+        status: 500,
+        data: {
+          success: false,
+          message: "An unexpected error occurred during login!",
+        },
+      };
+    }
+  }
 
   async getAllUsers(): Promise<UserDocument[]> {
     return this.userRepository.findAll();
@@ -23,7 +114,7 @@ export class UserService {
 
   async updateUser(
     id: string,
-    userData: Partial<UserDocument>
+    userData: Partial<UserDocument>,
   ): Promise<UserDocument | null> {
     return this.userRepository.update(id, userData);
   }
@@ -42,10 +133,10 @@ export class UserService {
 
   async validateUser(
     email: string,
-    password: string
+    password: string,
   ): Promise<UserDocument | null> {
     const user = (await this.userRepository.findByEmail(
-      email
+      email,
     )) as UserDocument | null;
     if (!user) return null;
     const isValid = await user.comparePassword(password);

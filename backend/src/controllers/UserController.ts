@@ -1,8 +1,54 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
+import { DatabaseError, NotFoundError } from "../utils/errors";
 
 export class UserController {
   constructor(private userService: UserService) {}
+
+  async userLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password }: { email: string; password: string } = req.body;
+      const loginStatus = await this.userService.userLogin(email, password); //This would return authResponse or throws error
+
+      const accessTokenMaxAge = 5 * 60 * 1000;
+      const refreshTokenMaxAge = 48 * 60 * 60 * 1000;
+
+      res
+        .status(loginStatus.status)
+        .cookie("access_token", loginStatus.data.token, {
+          maxAge: accessTokenMaxAge,
+          sameSite: "none",
+          secure: true,
+        })
+        .cookie("refresh_token", loginStatus.data.refreshToken, {
+          maxAge: refreshTokenMaxAge,
+          sameSite: "none",
+          secure: true,
+        })
+        .json(loginStatus);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication failed: User not found.",
+        });
+      } else if (error instanceof DatabaseError) {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error during login.",
+        });
+      } else if (error instanceof Error) {
+        res.status(401).json({
+          success: false,
+          message: error.message || "Authentication failed.",
+        });
+      } else {
+        res
+          .status(500)
+          .json({ success: false, message: "An unexpected error occurred." });
+      }
+    }
+  }
 
   async getAllUsers(req: Request, res: Response): Promise<void> {
     try {
