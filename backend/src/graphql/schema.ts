@@ -32,7 +32,7 @@ export const typeDefs = gql`
 
   input UserInput {
     email: String!
-    password: String!
+    password: String
     name: String!
     role: String
   }

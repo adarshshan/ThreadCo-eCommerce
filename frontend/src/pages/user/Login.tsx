@@ -1,36 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useStore } from "../../store/useStore";
 import { googleAuth } from "../../services/api";
 import AlertModal from "../../components/AlertModal";
+import bgImage from "../../assets/coverImages/kids-own-01.jpg";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const setUser = useStore((state) => state.setUser);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleClose = () => setOpen(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Placeholder for authentication logic
-    console.log("Login attempt with:", { email, password });
-
-    // Simulate a failed API response
-    const simulatedApiResponse = {
-      status: "failed",
-      message: "Invalid email or password",
-    };
-
-    if (simulatedApiResponse.status === "failed") {
-      setErrorMessage(simulatedApiResponse.message);
-      setOpen(true);
-    }
-  };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
@@ -52,84 +34,61 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-        <div>
-          <h2 className="text-center text-3xl font-bold text-pink-600">
-            Welcome to KIDS-OWN
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-pink-50">
+      {/* Background Image with Overlay */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105"
+        style={{ backgroundImage: `url(${bgImage})` }}
+      >
+        <div className="absolute inset-0 bg-pink-900/40 backdrop-blur-[2px]"></div>
+      </div>
+
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-md p-8 m-4 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 text-center transform transition-all hover:scale-[1.01]">
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-pink-600 tracking-tight mb-2">
+            KIDS-OWN
+          </h1>
+          <div className="h-1 w-20 bg-pink-400 mx-auto rounded-full mb-6"></div>
+          <p className="text-gray-700 text-lg font-medium">
+            Discover the Joy of Childhood
+          </p>
+          <p className="text-gray-500 text-sm mt-1">
+            Sign in to explore our collection
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
-                placeholder="Enter your email"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
-                placeholder="Enter your password"
-              />
-            </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
-            >
-              Sign In
-            </button>
+        <div className="space-y-6 flex flex-col items-center justify-center py-4">
+          <div className="w-full flex justify-center transform transition-transform hover:scale-105">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setErrorMessage("Google Login Failed");
+                setOpen(true);
+              }}
+              useOneTap
+              shape="pill"
+              theme="filled_blue"
+              size="large"
+              text="continue_with"
+            />
           </div>
-        </form>
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={() => {
-            setErrorMessage("Google Login Failed");
-            setOpen(true);
-          }}
-        />
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="font-medium text-pink-600 hover:text-pink-500"
-          >
-            Sign up
-          </Link>
-        </p>
+          
+          <p className="text-xs text-gray-400 max-w-[280px] leading-relaxed">
+            By signing in, you agree to our 
+            <span className="text-pink-500 cursor-pointer hover:underline mx-1">Terms of Service</span> 
+            and 
+            <span className="text-pink-500 cursor-pointer hover:underline mx-1">Privacy Policy</span>.
+          </p>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <p className="text-gray-600 text-sm">
+            Fast, secure, and easy access with Google.
+          </p>
+        </div>
       </div>
+
       <AlertModal open={open} onClose={handleClose} message={errorMessage} />
     </div>
   );
