@@ -23,8 +23,8 @@ app.use(express.json());
 const productRepository = new ProductRepository();
 const userRepository = new UserRepository();
 
-const productService = new ProductService(productRepository);
-const userService = new UserService(userRepository);
+// const productService = new ProductService(productRepository);
+// const userService = new UserService(userRepository);
 
 // Set up Apollo Server
 const startApolloServer = async () => {
@@ -35,15 +35,15 @@ const startApolloServer = async () => {
 
   await server.start();
 
-  app.use(
-    "/graphql",
-    expressMiddleware(server, {
-      context: async () => ({
-        productService,
-        userService,
-      }),
-    }),
-  );
+  // app.use(
+  //   "/graphql",
+  //   expressMiddleware(server, {
+  //     context: async () => ({
+  //       productService,
+  //       userService,
+  //     }),
+  //   }),
+  // );
 
   // Keep REST routes if you want to support both REST and GraphQL
   app.use("/api/products", productRoutes);

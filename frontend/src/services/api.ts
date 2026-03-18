@@ -51,6 +51,13 @@ export const getUsers = async (): Promise<User[]> => {
   return response.data;
 };
 
+export const createUser = async (
+  userData: Omit<User, "_id">,
+): Promise<User> => {
+  const response = await axios.post(`${VITE_API_URL}/users`, userData);
+  return response.data;
+};
+
 export const updateUser = async (userData: Partial<User>): Promise<User> => {
   const response = await axios.put(
     `${VITE_API_URL}/users/${userData._id}`,

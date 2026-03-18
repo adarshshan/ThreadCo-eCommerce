@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AlertModal from "./AlertModal";
 import { GoogleLogin } from "@react-oauth/google";
-import { googleAuth } from "../services/api";
-import { useStore } from "../store/useStore";
+import { useStore } from "../../store/useStore";
+import { googleAuth } from "../../services/api";
+import AlertModal from "../../components/AlertModal";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +40,7 @@ const Login: React.FC = () => {
           credentialResponse.clientId,
         );
         setUser(response.user);
+        localStorage.setItem("user", JSON.stringify(response.user));
         navigate("/");
       }
     } catch (error: any) {
@@ -122,7 +123,7 @@ const Login: React.FC = () => {
         <p className="mt-2 text-center text-sm text-gray-600">
           Don't have an account?{" "}
           <Link
-            to="/signup"
+            to="/register"
             className="font-medium text-pink-600 hover:text-pink-500"
           >
             Sign up

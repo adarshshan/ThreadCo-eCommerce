@@ -4,12 +4,17 @@ import { UserService } from "../services/UserService";
 import { UserRepository } from "../repositories/UserRepository";
 import { UserModel } from "../models/UserSchema";
 import jwt from "jsonwebtoken";
+import Encrypt from "../utils/comparePassword";
+import { CreateJWT } from "../utils/generateToken";
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client();
 
 const router = Router();
+const encrypt = new Encrypt();
+const createJWT = new CreateJWT();
+
 const userRepository = new UserRepository();
-const userService = new UserService(userRepository);
+const userService = new UserService(userRepository, encrypt, createJWT);
 const userController = new UserController(userService);
 
 router.get("/", (req, res) => userController.getAllUsers(req, res));
@@ -19,6 +24,8 @@ router.put("/:id", (req, res) => userController.updateUser(req, res));
 router.delete("/:id", (req, res) => userController.deleteUser(req, res));
 router.put("/:id/block", (req, res) => userController.blockUser(req, res));
 router.put("/:id/unblock", (req, res) => userController.unblockUser(req, res));
+
+router.post("/login", (req, res) => userController.userLogin(req, res));
 
 //google authentication
 router.post("/google-auth", async (req, res) => {
