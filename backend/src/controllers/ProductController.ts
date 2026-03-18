@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
 import { ProductService } from "../services/ProductService";
-import cloudinary from "../config/cloudinary";
 
 export class ProductController {
-  constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService) {}
 
   async getAllProducts(req: Request, res: Response): Promise<void> {
     try {
@@ -30,24 +29,29 @@ export class ProductController {
   async createProduct(req: Request, res: Response): Promise<void> {
     try {
       const productData = { ...req.body };
-      const product = await this.productService.createProduct({ ...productData, images: JSON.parse(productData.images) });
+      console.log("...productData...");
+      console.log(productData);
+
+      const product = await this.productService.createProduct({
+        ...productData,
+        images: JSON.parse(productData.images),
+      });
       res.status(201).json(product);
     } catch (error) {
-      console.log('this is the error getting...')
-      console.log(error)
+      console.log("this is the error getting...");
+      console.log(error);
       res.status(500).json({ message: "Error creating product" });
     }
   }
 
   async updateProduct(req: Request, res: Response): Promise<void> {
     try {
-
       const productData = { ...req.body };
 
-      const product = await this.productService.updateProduct(
-        req.params.id,
-        { ...productData, images: JSON.parse(productData.images), }
-      );
+      const product = await this.productService.updateProduct(req.params.id, {
+        ...productData,
+        images: JSON.parse(productData.images),
+      });
 
       if (!product) {
         res.status(404).json({ message: "Product not found" });
@@ -55,7 +59,7 @@ export class ProductController {
       }
       res.json(product);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       res.status(500).json({ message: "Error updating product" });
     }
   }
