@@ -9,16 +9,11 @@ import ProductList from "./pages/user/ProductList";
 import ProductDetails from "./pages/user/ProductDetails";
 import Dashboard from "./pages/admin/Dashboard";
 import Login from "./pages/user/Login";
-import Signup from "./pages/user/Signup";
 
 const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
-  },
-  {
-    path: "/register",
-    element: <Signup />,
   },
   {
     path: "/",
