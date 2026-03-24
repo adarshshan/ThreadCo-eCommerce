@@ -21,9 +21,11 @@ const Login: React.FC = () => {
           credentialResponse.credential,
           credentialResponse.clientId,
         );
-        const userWithToken = { ...response.user, token: response.token };
-        setUser(userWithToken);
-        localStorage.setItem("user", JSON.stringify(userWithToken));
+        const userData = {
+          ...response.user,
+        };
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
         navigate("/");
       }
     } catch (error: any) {
@@ -37,7 +39,7 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-pink-50">
       {/* Background Image with Overlay */}
-      <div 
+      <div
         className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
@@ -74,12 +76,17 @@ const Login: React.FC = () => {
               text="continue_with"
             />
           </div>
-          
+
           <p className="text-xs text-gray-400 max-w-[280px] leading-relaxed">
-            By signing in, you agree to our 
-            <span className="text-pink-500 cursor-pointer hover:underline mx-1">Terms of Service</span> 
-            and 
-            <span className="text-pink-500 cursor-pointer hover:underline mx-1">Privacy Policy</span>.
+            By signing in, you agree to our
+            <span className="text-pink-500 cursor-pointer hover:underline mx-1">
+              Terms of Service
+            </span>
+            and
+            <span className="text-pink-500 cursor-pointer hover:underline mx-1">
+              Privacy Policy
+            </span>
+            .
           </p>
         </div>
 

@@ -1,10 +1,9 @@
 import "dotenv/config";
 import express, { Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { connectToDatabase } from "./config/database";
-import { ProductRepository } from "./repositories/ProductRepository";
 import { productRoutes } from "./routes/ProductRoutes";
-import { UserRepository } from "./repositories/UserRepository";
 import { userRoutes } from "./routes/UserRoutes";
 import { orderRoutes } from "./routes/OrderRoutes";
 import { adminRoutes } from "./routes/AdminRoutes";
@@ -12,12 +11,14 @@ import { adminRoutes } from "./routes/AdminRoutes";
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
+  })
+);
 app.use(express.json());
-
-// Initialize Repositories
-const productRepository = new ProductRepository();
-const userRepository = new UserRepository();
+app.use(cookieParser());
 
 // Set up REST Routes
 app.use("/api/products", productRoutes);

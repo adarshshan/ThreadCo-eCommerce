@@ -44,13 +44,13 @@ export class UserRepository implements IUserRepository {
 
   async update(
     id: string,
-    userData: Partial<UserDocument>
+    userData: Partial<UserDocument>,
   ): Promise<UserDocument | null> {
     try {
       return (await UserModel.findByIdAndUpdate(
         id,
         { $set: userData },
-        { new: true }
+        { new: true },
       ).exec()) as UserDocument | null;
     } catch (error) {
       if (
