@@ -19,9 +19,6 @@ export class OrderController {
     try {
       const { items } = req.body;
 
-      console.log("this is the items");
-      console.log(items);
-
       // Calculate total price server-side to prevent tampering
       let totalAmount = 0;
       for (const item of items) {
@@ -94,6 +91,7 @@ export class OrderController {
         totalPrice,
         paymentResult,
       } = req.body;
+      const userId = req.userId;
 
       if (orderItems && orderItems.length === 0) {
         res.status(400).json({ message: "No order items" });
@@ -101,7 +99,7 @@ export class OrderController {
       }
 
       const order = new OrderModel({
-        user: (req as any).user._id, // Assumes auth middleware populates user
+        user: userId, // Assumes auth middleware populates user
         items: orderItems,
         shippingAddress,
         paymentMethod,
@@ -132,8 +130,9 @@ export class OrderController {
 
   async getMyOrders(req: Request, res: Response): Promise<void> {
     try {
+      const userId = req.userId;
       const orders = await OrderModel.find({
-        user: (req as any).user._id,
+        user: userId,
       }).sort({ createdAt: -1 });
       res.json(orders);
     } catch (error: any) {
@@ -143,7 +142,9 @@ export class OrderController {
 
   async getOrderById(req: Request, res: Response): Promise<void> {
     try {
-      const order = await OrderModel.findById(req.params.id).populate(
+      const orderId = req.params.id;
+
+      const order = await OrderModel.findById(orderId).populate(
         "user",
         "name email",
       );
@@ -163,6 +164,7 @@ export class OrderController {
   async cancelOrder(req: Request, res: Response): Promise<void> {
     try {
       const { reason } = req.body;
+      const userId = req.userId;
       const order = await OrderModel.findById(req.params.id);
 
       if (!order) {
@@ -171,7 +173,7 @@ export class OrderController {
       }
 
       // Check ownership
-      if (order.user.toString() !== (req as any).user._id.toString()) {
+      if (order.user.toString() !== userId) {
         res.status(401).json({ message: "Not authorized" });
         return;
       }
@@ -216,6 +218,7 @@ export class OrderController {
   async requestReturn(req: Request, res: Response): Promise<void> {
     try {
       const { reason } = req.body;
+      const userId = req.userId;
       const order = await OrderModel.findById(req.params.id);
 
       if (!order) {
@@ -223,7 +226,7 @@ export class OrderController {
         return;
       }
 
-      if (order.user.toString() !== (req as any).user._id.toString()) {
+      if (order.user.toString() !== userId) {
         res.status(401).json({ message: "Not authorized" });
         return;
       }

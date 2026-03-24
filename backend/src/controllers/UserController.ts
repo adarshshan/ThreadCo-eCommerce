@@ -1,9 +1,16 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
 import { DatabaseError, NotFoundError } from "../utils/errors";
+import { UserModel } from "../models/UserSchema";
+import { CreateJWT } from "../utils/generateToken";
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client();
 
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private createJWT: CreateJWT,
+  ) {}
 
   async userLogin(req: Request, res: Response): Promise<void> {
     try {
@@ -17,13 +24,15 @@ export class UserController {
         .status(loginStatus.status)
         .cookie("access_token", loginStatus.data.token, {
           maxAge: accessTokenMaxAge,
-          sameSite: "none",
-          secure: true,
+          sameSite: "lax",
+          secure: false, // true in production
+          httpOnly: true,
         })
         .cookie("refresh_token", loginStatus.data.refreshToken, {
           maxAge: refreshTokenMaxAge,
-          sameSite: "none",
-          secure: true,
+          sameSite: "lax",
+          secure: false, // true in production
+          httpOnly: true,
         })
         .json(loginStatus);
     } catch (error) {
@@ -130,6 +139,59 @@ export class UserController {
       res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Error unblocking user" });
+    }
+  }
+  async googleSignIn(req: Request, res: Response) {
+    const { credential, client_id } = req.body;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: client_id,
+      });
+      const payload = ticket.getPayload();
+      const { email, given_name, family_name } = payload;
+
+      // Check if the user already exists in the database
+      let user = await UserModel.findOne({ email });
+      if (!user) {
+        // Create a new user if they don't exist
+        user = await UserModel.create({
+          email,
+          name: `${given_name} ${family_name}`,
+          authSource: "google",
+        });
+      }
+
+      // Generate a JWT token
+      const token = this.createJWT.generateToken(user?._id as string);
+      const refreshToken = this.createJWT.generateRefreshToken(
+        user?._id as string,
+      );
+
+      const accessTokenMaxAge = 30 * 60 * 1000;
+      const refreshTokenMaxAge = 48 * 60 * 60 * 1000;
+      // Send the token as a cookie and response
+      res
+        .status(200)
+        .cookie("access_token", token, {
+          httpOnly: true,
+          secure: false,
+          maxAge: accessTokenMaxAge,
+          sameSite: "lax",
+        })
+        .cookie("refresh_token", refreshToken, {
+          httpOnly: true,
+          secure: false,
+          maxAge: refreshTokenMaxAge,
+          sameSite: "lax",
+        })
+        .json({
+          success: true,
+          user,
+          message: "Authentication successful",
+        });
+    } catch (error) {
+      res.status(500).json({ message: "Error Google Login" });
     }
   }
 }

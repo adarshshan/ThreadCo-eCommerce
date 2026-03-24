@@ -4,6 +4,8 @@ import type { User } from "../types/User";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
+axios.defaults.withCredentials = true;
+
 export interface ProductFilters {
   category?: string;
   minPrice?: number;
@@ -12,17 +14,23 @@ export interface ProductFilters {
   sort?: string;
 }
 
-export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {
+export const getProducts = async (
+  filters?: ProductFilters,
+): Promise<Product[]> => {
   const params = new URLSearchParams();
   if (filters) {
     if (filters.category) params.append("category", filters.category);
-    if (filters.minPrice) params.append("minPrice", filters.minPrice.toString());
-    if (filters.maxPrice) params.append("maxPrice", filters.maxPrice.toString());
+    if (filters.minPrice)
+      params.append("minPrice", filters.minPrice.toString());
+    if (filters.maxPrice)
+      params.append("maxPrice", filters.maxPrice.toString());
     if (filters.search) params.append("search", filters.search);
     if (filters.sort) params.append("sort", filters.sort);
   }
-  
-  const response = await axios.get(`${VITE_API_URL}/products?${params.toString()}`);
+
+  const response = await axios.get(
+    `${VITE_API_URL}/products?${params.toString()}`,
+  );
   return response.data;
 };
 
@@ -70,7 +78,6 @@ export const getUsers = async (): Promise<User[]> => {
 // User management functions can go here as needed
 // createUser removed in favor of Google-only authentication
 
-
 export const updateUser = async (userData: Partial<User>): Promise<User> => {
   const response = await axios.put(
     `${VITE_API_URL}/users/${userData._id}`,
@@ -96,7 +103,13 @@ export const unblockUser = async (id: string): Promise<User> => {
 export const googleAuth = async (
   credential: string,
   client_id: string,
-): Promise<{ message: string; user: User; token: string }> => {
+): Promise<{
+  success: boolean;
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+  message: string;
+}> => {
   const response = await axios.post(`${VITE_API_URL}/users/google-auth`, {
     credential,
     client_id,
@@ -115,7 +128,7 @@ export const createRazorpayOrder = async (items: any[]) => {
   const response = await axios.post(
     `${VITE_API_URL}/orders/create-razorpay-order`,
     { items },
-    config
+    config,
   );
   return response.data;
 };
@@ -130,7 +143,7 @@ export const verifyPayment = async (paymentData: any) => {
   const response = await axios.post(
     `${VITE_API_URL}/orders/verify-payment`,
     paymentData,
-    config
+    config,
   );
   return response.data;
 };
@@ -145,30 +158,18 @@ export const createOrder = async (orderData: any) => {
   const response = await axios.post(
     `${VITE_API_URL}/orders`,
     orderData,
-    config
+    config,
   );
   return response.data;
 };
 
 export const getMyOrders = async () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const config = {
-    headers: {
-      Authorization: `Bearer ${user.token}`,
-    },
-  };
-  const response = await axios.get(`${VITE_API_URL}/orders/myorders`, config);
+  const response = await axios.get(`${VITE_API_URL}/orders/myorders`);
   return response.data;
 };
 
 export const getOrderById = async (id: string) => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const config = {
-    headers: {
-      Authorization: `Bearer ${user.token}`,
-    },
-  };
-  const response = await axios.get(`${VITE_API_URL}/orders/${id}`, config);
+  const response = await axios.get(`${VITE_API_URL}/orders/${id}`);
   return response.data;
 };
 
@@ -182,7 +183,7 @@ export const cancelOrder = async (id: string, reason: string) => {
   const response = await axios.post(
     `${VITE_API_URL}/orders/${id}/cancel`,
     { reason },
-    config
+    config,
   );
   return response.data;
 };
@@ -197,7 +198,7 @@ export const requestReturn = async (id: string, reason: string) => {
   const response = await axios.post(
     `${VITE_API_URL}/orders/${id}/return`,
     { reason },
-    config
+    config,
   );
   return response.data;
 };
@@ -212,7 +213,7 @@ export const getAllOrders = async (page: number = 1) => {
   };
   const response = await axios.get(
     `${VITE_API_URL}/orders?pageNumber=${page}`,
-    config
+    config,
   );
   return response.data;
 };
@@ -227,7 +228,7 @@ export const updateOrderStatus = async (id: string, status: string) => {
   const response = await axios.put(
     `${VITE_API_URL}/orders/${id}/status`,
     { status },
-    config
+    config,
   );
   return response.data;
 };
@@ -242,7 +243,7 @@ export const handleReturnRequest = async (id: string, status: string) => {
   const response = await axios.put(
     `${VITE_API_URL}/orders/${id}/return`,
     { status },
-    config
+    config,
   );
   return response.data;
 };
