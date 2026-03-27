@@ -9,7 +9,7 @@ import {
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CustomButton from "../../components/Button";
 
 declare global {
   interface Window {
@@ -35,6 +35,10 @@ const Checkout = () => {
     country: "India",
     phone: "",
   });
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Initialize name from user once available
   useEffect(() => {
@@ -91,9 +95,9 @@ const Checkout = () => {
             razorpay_signature: response.razorpay_signature,
           });
 
-          if (verificationResult.success) {
+          if (verificationResult?.success) {
             await createOrder({
-              orderItems: cart.map((item) => ({
+              orderItems: cart?.map((item) => ({
                 product: item._id,
                 name: item.name,
                 image:
@@ -105,7 +109,7 @@ const Checkout = () => {
               })),
               shippingAddress,
               paymentMethod: "Razorpay",
-              itemsPrice: cart.reduce(
+              itemsPrice: cart?.reduce(
                 (acc, item) => acc + item.price * item.quantity,
                 0,
               ),
@@ -150,9 +154,9 @@ const Checkout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[2rem]">
+    <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[5rem]">
       <div className="container-custom py-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-serif font-black text-white mb-4">
               Checkout
@@ -192,26 +196,31 @@ const Checkout = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-7">
               {step === 1 ? (
                 <div className="card bg-surface p-6 sm:p-8">
                   <div className="flex items-center gap-3 mb-8">
                     <LocalShippingIcon className="text-accent" />
-                    <h3 className="text-xl font-bold text-white">
+                    <h3 className="text-xl font-bold text-[var(--color-text-light)]">
                       Shipping Information
                     </h3>
                   </div>
 
-                  <form onSubmit={handleAddressSubmit} className="space-y-6">
+                  <form
+                    onSubmit={handleAddressSubmit}
+                    className="space-y-6 text-[var(--color-text-light)]"
+                  >
                     <div className="space-y-4">
-                      <div>
-                        <label className="label">Full Name</label>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                          Full Name
+                        </label>
                         <input
                           type="text"
                           placeholder="Your full name"
                           required
-                          className="input"
+                          className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                           value={shippingAddress.fullName}
                           onChange={(e) =>
                             setShippingAddress({
@@ -221,13 +230,16 @@ const Checkout = () => {
                           }
                         />
                       </div>
-                      <div>
-                        <label className="label">Address Line 1</label>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                          Address Line 1
+                        </label>
                         <input
                           type="text"
                           placeholder="House / Street / Apartment"
                           required
-                          className="input"
+                          className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                           value={shippingAddress.addressLine1}
                           onChange={(e) =>
                             setShippingAddress({
@@ -237,14 +249,17 @@ const Checkout = () => {
                           }
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="label">City</label>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                            City
+                          </label>
                           <input
                             type="text"
                             placeholder="City"
                             required
-                            className="input"
+                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                             value={shippingAddress.city}
                             onChange={(e) =>
                               setShippingAddress({
@@ -254,13 +269,16 @@ const Checkout = () => {
                             }
                           />
                         </div>
-                        <div>
-                          <label className="label">State / Province</label>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                            State / Province
+                          </label>
                           <input
                             type="text"
                             placeholder="State"
                             required
-                            className="input"
+                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                             value={shippingAddress.state}
                             onChange={(e) =>
                               setShippingAddress({
@@ -271,14 +289,17 @@ const Checkout = () => {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="label">Postal Code</label>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                            Postal Code
+                          </label>
                           <input
                             type="text"
                             placeholder="6-digit code"
                             required
-                            className="input"
+                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                             value={shippingAddress.postalCode}
                             onChange={(e) =>
                               setShippingAddress({
@@ -288,13 +309,16 @@ const Checkout = () => {
                             }
                           />
                         </div>
-                        <div>
-                          <label className="label">Country</label>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                            Country
+                          </label>
                           <input
                             type="text"
                             placeholder="Country"
                             required
-                            className="input"
+                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                             value={shippingAddress.country}
                             onChange={(e) =>
                               setShippingAddress({
@@ -305,13 +329,16 @@ const Checkout = () => {
                           />
                         </div>
                       </div>
-                      <div>
-                        <label className="label">Phone Number</label>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
+                          Phone Number
+                        </label>
                         <input
                           type="tel"
                           placeholder="Your contact number"
                           required
-                          className="input"
+                          className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
                           value={shippingAddress.phone}
                           onChange={(e) =>
                             setShippingAddress({
@@ -324,13 +351,9 @@ const Checkout = () => {
                     </div>
 
                     <div className="pt-6">
-                      <button
-                        type="submit"
-                        disabled={isProcessing}
-                        className="btn-accent w-full py-4 text-lg font-bold shadow-xl disabled:opacity-50"
-                      >
+                      <CustomButton type="submit" disabled={isProcessing}>
                         {isProcessing ? "Processing..." : "Continue to Payment"}
-                      </button>
+                      </CustomButton>
                     </div>
                   </form>
                 </div>
@@ -360,27 +383,27 @@ const Checkout = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="btn-outline flex-1 py-4 flex items-center justify-center gap-2"
-                    >
-                      <ArrowBackIcon fontSize="small" />
-                      Back
-                    </button>
-                    <button
-                      onClick={handlePayment}
+                    <CustomButton
+                      onclick={() => setStep(1)}
                       disabled={isProcessing}
-                      className="btn-accent flex-[2] py-4 text-lg font-bold shadow-xl"
+                      className="text-accent"
+                    >
+                      Back
+                    </CustomButton>
+
+                    <CustomButton
+                      onclick={handlePayment}
+                      disabled={isProcessing}
                     >
                       {isProcessing ? "Verifying..." : "Pay Securely Now"}
-                    </button>
+                    </CustomButton>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Sidebar Summary */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-5">
               <div className="card bg-surface p-6 sticky top-24">
                 <h3 className="text-lg font-bold text-white mb-6 border-b border-border pb-4">
                   Order Summary
@@ -432,7 +455,7 @@ const Checkout = () => {
                       <div className="flex justify-between text-sm text-text-secondary">
                         <span>Tax</span>
                         <span className="text-white font-mono">
-                          ₹{orderData.tax.toFixed(2)}
+                          ₹{orderData?.tax?.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm text-text-secondary">
