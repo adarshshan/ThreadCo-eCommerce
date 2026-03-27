@@ -24,8 +24,8 @@ export const getProducts = async (
       params.append("minPrice", filters.minPrice.toString());
     if (filters.maxPrice)
       params.append("maxPrice", filters.maxPrice.toString());
-    if (filters.search) params.append("search", filters.search);
-    if (filters.sort) params.append("sort", filters.sort);
+    if (filters.search) params.append("search", filters?.search);
+    if (filters.sort) params.append("sort", filters?.sort);
   }
 
   const response = await axios.get(
@@ -114,6 +114,54 @@ export const googleAuth = async (
     credential,
     client_id,
   });
+  return response.data;
+};
+
+// Category API
+export const getCategories = async (status?: string) => {
+  const params = new URLSearchParams();
+  if (status) params.append("status", status);
+  const response = await axios.get(
+    `${VITE_API_URL}/categories?${params.toString()}`,
+  );
+  return response.data;
+};
+
+export const createCategory = async (categoryData: any) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const config = {
+    headers: { Authorization: `Bearer ${user.token}` },
+  };
+  const response = await axios.post(
+    `${VITE_API_URL}/categories`,
+    categoryData,
+    config,
+  );
+  return response.data;
+};
+
+export const updateCategory = async (id: string, categoryData: any) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const config = {
+    headers: { Authorization: `Bearer ${user.token}` },
+  };
+  const response = await axios.put(
+    `${VITE_API_URL}/categories/${id}`,
+    categoryData,
+    config,
+  );
+  return response.data;
+};
+
+export const deleteCategory = async (id: string) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const config = {
+    headers: { Authorization: `Bearer ${user.token}` },
+  };
+  const response = await axios.delete(
+    `${VITE_API_URL}/categories/${id}`,
+    config,
+  );
   return response.data;
 };
 
@@ -245,5 +293,23 @@ export const handleReturnRequest = async (id: string, status: string) => {
     { status },
     config,
   );
+  return response.data;
+};
+
+// Contact API
+export const submitContact = async (contactData: any) => {
+  const response = await axios.post(`${VITE_API_URL}/contact`, contactData);
+  return response.data;
+};
+
+export const getAllContacts = async () => {
+  const response = await axios.get(`${VITE_API_URL}/contact`);
+  return response.data;
+};
+
+export const updateContactStatus = async (id: string, status: string) => {
+  const response = await axios.patch(`${VITE_API_URL}/contact/${id}`, {
+    status,
+  });
   return response.data;
 };

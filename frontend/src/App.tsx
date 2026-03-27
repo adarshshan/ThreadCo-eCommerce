@@ -6,6 +6,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import ProductManagement from "./pages/admin/ProductManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 import ProductList from "./pages/user/ProductList";
 import ProductDetails from "./pages/user/ProductDetails";
 import Dashboard from "./pages/admin/Dashboard";
@@ -13,6 +14,8 @@ import Login from "./pages/user/Login";
 import Checkout from "./pages/user/Checkout";
 import MyOrders from "./pages/user/MyOrders";
 import OrderDetails from "./pages/user/OrderDetails";
+import ContactUs from "./pages/user/ContactUs";
+import ContactManagement from "./pages/admin/ContactManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const router = createBrowserRouter([
@@ -39,6 +42,10 @@ const router = createBrowserRouter([
       {
         path: "/cart",
         element: <Cart />,
+      },
+      {
+        path: "/contact",
+        element: <ContactUs />,
       },
       // Protected User Routes
       {
@@ -79,6 +86,14 @@ const router = createBrowserRouter([
       {
         path: "order-management",
         element: <OrderManagement />,
+      },
+      {
+        path: "category-management",
+        element: <CategoryManagement />,
+      },
+      {
+        path: "contact-management",
+        element: <ContactManagement />,
       },
     ],
   },

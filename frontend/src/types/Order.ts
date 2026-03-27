@@ -1,5 +1,5 @@
-import { Product } from "./Product";
-import { User } from "./User";
+import type { Product } from "./Product";
+import type { User } from "./User";
 
 export interface OrderItem {
   product: Product | string;
@@ -44,7 +44,13 @@ export interface Order {
   paidAt?: string;
   isDelivered: boolean;
   deliveredAt?: string;
-  status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled" | "Returned";
+  status:
+    | "Pending"
+    | "Processing"
+    | "Shipped"
+    | "Delivered"
+    | "Cancelled"
+    | "Returned";
   createdAt: string;
   updatedAt: string;
   cancelReason?: string;
