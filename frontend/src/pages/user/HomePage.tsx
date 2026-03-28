@@ -10,7 +10,7 @@ const HomePage: React.FC = () => {
       <section className="relative overflow-hidden">
         <SlickComponent />
       </section>
-      <div className="py-12 bg-background">
+      <div className="py-3 sm:py-12 bg-background">
         <ProductList />
       </div>
     </div>

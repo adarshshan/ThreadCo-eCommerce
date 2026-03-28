@@ -62,12 +62,12 @@ const ProductDetails: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[5rem]">
-      <div className="container-custom py-8">
+    <div className="min-h-screen bg-background pb-1 sm:pb-20 px-[1rem] sm:px-[20rem]">
+      <div className="container-custom py-3 sm:py-8">
         {/* Breadcrumbs / Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors mb-8 group"
+          className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors mb-3 sm:mb-8 group"
         >
           <ArrowBackIcon
             fontSize="small"
@@ -122,19 +122,19 @@ const ProductDetails: React.FC = () => {
           </div>
 
           {/* Product Info Section */}
-          <div className="flex flex-col space-y-8">
+          <div className="flex flex-col space-y-1 sm:space-y-8">
             <div>
-              <div className="flex items-center text-[var(--color-text-light)] gap-2 mb-4">
+              <div className="flex items-center text-[var(--color-text-light)] gap-2 mb-1 sm:mb-4">
                 <span className="badge badge-accent">New Arrival</span>
                 <span className="text-text-muted text-xs font-bold uppercase tracking-tighter">
                   In Stock
                 </span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-serif font-black text-[var(--color-text-light)] mb-4 leading-tight capitalize">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-black text-[var(--color-text-light)] mb-4 leading-tight capitalize">
                 {product?.name}
               </h1>
               <div className="flex items-baseline gap-4">
-                <p className="text-3xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-light)]">
                   ₹{product?.price.toFixed(2)}
                 </p>
                 <p className="text-text-muted line-through text-lg">
@@ -143,8 +143,8 @@ const ProductDetails: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-surface-light/50 p-6 rounded-2xl border border-border backdrop-blur-sm">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-white mb-3">
+            <div className="bg-surface-light/50 p-3 sm:p-6 rounded-2xl border border-border backdrop-blur-sm">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-light)] mb-3">
                 Product Description
               </h3>
               <p className="text-text-secondary leading-relaxed">
@@ -168,7 +168,7 @@ const ProductDetails: React.FC = () => {
             </div>
 
             {/* Features/Trust Badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-border py-8">
+            <div className="grid grid-cols-3 gap-4 border-y border-border py-8">
               <div className="flex flex-col items-center text-center space-y-2">
                 <VerifiedIcon className="text-accent" />
                 <span className="text-xs font-bold text-white uppercase tracking-tighter">

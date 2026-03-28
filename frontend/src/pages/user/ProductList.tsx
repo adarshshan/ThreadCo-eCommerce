@@ -208,7 +208,7 @@ const ProductList: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[5rem]">
-      <div className="container-custom py-8">
+      <div className="container-custom py-2 sm:py-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
           <div>
@@ -265,36 +265,38 @@ const ProductList: React.FC = () => {
               )}
             </Search>
 
-            <div className="w-full sm:w-auto">
-              <FormControl size="small" fullWidth sx={{ minWidth: 160 }}>
-                <Select
-                  value={filters.sort || "newest"}
-                  onChange={handleSortChange}
-                  displayEmpty
-                  IconComponent={ExpandMoreIcon}
-                  sx={{
-                    bgcolor: "var(--color-surface)",
-                    color: "white",
-                    borderRadius: "0.5rem",
-                    border: "1px solid var(--color-border)",
-                    "& .MuiSelect-icon": { color: "white" },
-                    "& fieldset": { border: "none" },
-                  }}
-                >
-                  <MenuItem value="newest">Newest</MenuItem>
-                  <MenuItem value="price_asc">Price: Low to High</MenuItem>
-                  <MenuItem value="price_desc">Price: High to Low</MenuItem>
-                </Select>
-              </FormControl>
+            <div className="flex items-center gap-3">
+              {/* Mobile Filter Toggle */}
+              <button
+                onClick={() => setMobileOpen(true)}
+                className="md:hidden btn-secondary px-4 py-2.5 flex items-center justify-center gap-2 border border-[var(--color-border)] rounded-md text-[var(--color-text-light)] opacity-80 hover:opacity-95"
+              >
+                <FilterListIcon fontSize="small" />
+                Filters
+              </button>
+              <div className="w-full sm:w-auto menuitems">
+                <FormControl size="small" fullWidth sx={{ minWidth: 160 }}>
+                  <Select
+                    value={filters.sort || "newest"}
+                    onChange={handleSortChange}
+                    displayEmpty
+                    IconComponent={ExpandMoreIcon}
+                    sx={{
+                      bgcolor: "var(--color-surface)",
+                      color: "white",
+                      borderRadius: "0.5rem",
+                      border: "1px solid var(--color-border)",
+                      "& .MuiSelect-icon": { color: "white" },
+                      "& fieldset": { border: "none" },
+                    }}
+                  >
+                    <MenuItem value="newest">Newest</MenuItem>
+                    <MenuItem value="price_asc">Price: Low to High</MenuItem>
+                    <MenuItem value="price_desc">Price: High to Low</MenuItem>
+                  </Select>
+                </FormControl>
+              </div>
             </div>
-            {/* Mobile Filter Toggle */}
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden btn-secondary px-4 py-2.5 flex items-center justify-center gap-2"
-            >
-              <FilterListIcon fontSize="small" />
-              Filters
-            </button>
           </div>
         </div>
 

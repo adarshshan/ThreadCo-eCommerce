@@ -98,3 +98,9 @@
   transform: scale(1.2) !important;
   background: var(--color-accent, #ffffff) !important;
 }
+
+.Mui-selected,
+.MuiList-root {
+  background-color: var(--color-surface-hover) !important;
+  color: var(--color-text-light) !important;
+}

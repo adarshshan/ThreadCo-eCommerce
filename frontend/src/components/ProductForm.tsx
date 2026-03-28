@@ -30,7 +30,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [categories, setCategories] = useState<any[]>([]);
   const [stock, setStock] = useState<number | null>(null);
   const [images, setImages] = useState<(File | string | null | undefined)[]>(
-    []
+    [],
   );
   const [picMessage, setPicMessage] = useState<string | null>(null);
 
@@ -50,7 +50,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setPrice(product.price);
       setDescription(product?.description ?? "");
       // Handle both string ID and populated object
-      setCategory(typeof product?.category === 'object' ? (product.category as any)._id : product?.category ?? "");
+      setCategory(
+        typeof product?.category === "object"
+          ? (product.category as any)._id
+          : (product?.category ?? ""),
+      );
       setStock(product?.stock ?? 0);
       setImages(product.images ?? []);
     } else {
@@ -114,15 +118,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
       try {
         // Separate existing image URLs from new File objects
         const existingImageUrls = images.filter(
-          (img): img is string => typeof img === "string"
+          (img): img is string => typeof img === "string",
         );
         const newImageFiles = images.filter(
-          (img): img is File => img instanceof File
+          (img): img is File => img instanceof File,
         );
 
         // Upload only the new files
         const newImageUrls = await Promise.all(
-          newImageFiles.map((file) => uploadImage(file))
+          newImageFiles.map((file) => uploadImage(file)),
         );
 
         // Combine old and new URLs
@@ -158,7 +162,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       >
         {product ? "Edit Product" : "Add Product"}
       </Typography>
-      <Box component="form" onSubmit={handleSubmit} className="space-y-4">
+      <Box component="form" onSubmit={handleSubmit} className="!space-y-4">
         <TextField
           id="name"
           label="Product Name"
@@ -169,7 +173,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700",
+            className: "text-gray-700 border border-[var(--color-border)]",
           }}
           InputLabelProps={{
             className: "text-gray-600",
@@ -186,7 +190,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700",
+            className: "text-gray-700 border border-[var(--color-border)]",
           }}
           InputLabelProps={{
             className: "text-gray-600",
@@ -203,7 +207,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           rows={4}
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700",
+            className: "text-gray-700 border border-[var(--color-border)]",
           }}
           InputLabelProps={{
             className: "text-gray-600",
@@ -219,6 +223,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
           fullWidth
           required
           className="rounded-md"
+          InputProps={{
+            className: "text-gray-700 border border-[var(--color-border)]",
+          }}
         >
           {categories.map((cat) => (
             <MenuItem key={cat._id} value={cat._id}>
@@ -237,7 +244,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700",
+            className: "text-gray-700 border border-[var(--color-border)]",
           }}
           InputLabelProps={{
             className: "text-gray-600",
