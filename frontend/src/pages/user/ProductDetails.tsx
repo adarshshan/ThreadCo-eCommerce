@@ -20,6 +20,9 @@ const ProductDetails: React.FC = () => {
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
   const addToCart = useStore((state) => state.addToCart);
+  const wishlist = useStore((state) => state.wishlist);
+  const addToWishlist = useStore((state) => state.addToWishlist);
+  const removeFromWishlist = useStore((state) => state.removeFromWishlist);
 
   const {
     data: product,
@@ -31,15 +34,26 @@ const ProductDetails: React.FC = () => {
     enabled: !!id,
   });
 
+  const isInWishlist = wishlist.some((item) => item?._id === product?._id);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
 
   useEffect(() => {
     if (product?.images?.[0]) {
-      setSelectedImage(product.images[0]);
+      setSelectedImage(product?.images[0]);
     }
   }, [product]);
+
+  const toggleWishlist = async () => {
+    if (!product) return;
+    if (isInWishlist) {
+      await removeFromWishlist(product?._id as string);
+    } else {
+      await addToWishlist(product);
+    }
+  };
 
   if (isLoading) {
     return <Loading />;
@@ -101,7 +115,7 @@ const ProductDetails: React.FC = () => {
 
             {/* Thumbnails */}
             <div className="hidden sm:flex  gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {product.images?.map((image, index) => (
+              {product?.images?.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(image)}
@@ -113,7 +127,7 @@ const ProductDetails: React.FC = () => {
                 >
                   <img
                     src={image}
-                    alt={`${product.name} thumb ${index}`}
+                    alt={`${product?.name} thumb ${index}`}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -161,9 +175,12 @@ const ProductDetails: React.FC = () => {
                 <ShoppingCartIcon />
                 Add to Cart
               </button>
-              <button className="bg-red-400 btn-outline btn-lg flex-grow py-2 rounded-md cursor-pointer">
+              <button
+                onClick={toggleWishlist}
+                className={`${isInWishlist ? "bg-red-500 text-white" : "bg-red-400"} btn-outline btn-lg flex-grow py-2 rounded-md cursor-pointer flex items-center justify-center gap-3 transition-colors`}
+              >
                 <FavoriteIcon />
-                Add to Wishlist
+                {isInWishlist ? "In Wishlist" : "Add to Wishlist"}
               </button>
             </div>
 

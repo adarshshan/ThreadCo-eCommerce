@@ -4,6 +4,7 @@ import { IconButton } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import DropdownMenu from "./DropdownMenu";
 import HeaderDrawer from "./HeaderDrawer";
 
@@ -12,6 +13,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const cart = useStore((state) => state.cart);
+  const wishlist = useStore((state) => state.wishlist);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -64,6 +66,17 @@ const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <IconButton
+              onClick={() => navigate("/wishlist")}
+              className="text-text-secondary hover:text-accent transition-colors relative"
+            >
+              <FavoriteIcon />
+              {wishlist?.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
+                  {wishlist?.length}
+                </span>
+              )}
+            </IconButton>
             <IconButton
               onClick={() => navigate("/cart")}
               className="text-text-secondary hover:text-accent transition-colors relative"

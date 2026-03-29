@@ -3,6 +3,8 @@ import { type Product } from "../types/Product";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
 interface ProductCardProps {
   product: Product;
@@ -11,10 +13,24 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
   const addToCart = useStore((state) => state.addToCart);
+  const wishlist = useStore((state) => state.wishlist);
+  const addToWishlist = useStore((state) => state.addToWishlist);
+  const removeFromWishlist = useStore((state) => state.removeFromWishlist);
+
+  const isInWishlist = wishlist.some((item) => item._id === product._id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     addToCart(product);
+  };
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInWishlist) {
+      await removeFromWishlist(product._id as string);
+    } else {
+      await addToWishlist(product);
+    }
   };
 
   return (
@@ -29,6 +45,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+
+        {/* Wishlist Toggle Button */}
+        <button
+          onClick={toggleWishlist}
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white hover:text-red-500 transition-all duration-300 z-10"
+        >
+          {isInWishlist ? (
+            <FavoriteIcon fontSize="small" className="text-red-500" />
+          ) : (
+            <FavoriteBorderIcon fontSize="small" />
+          )}
+        </button>
 
         {/* Quick Action Button overlay */}
         <div className="absolute bottom-4 right-4 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">

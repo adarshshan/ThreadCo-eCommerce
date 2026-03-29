@@ -154,12 +154,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <Paper
       elevation={3}
-      className="w-full max-w-lg mx-auto !shadow-none !bg-transparent rounded-xl"
+      className="w-full max-w-lg mx-auto !shadow-none !bg-transparent rounded-xl !text-[var(--color-text-light)]"
     >
-      <Typography
-        variant="h5"
-        className="font-bold text-gray-800 mb-6 text-center"
-      >
+      <Typography variant="h5" className="font-bold mb-6 text-center">
         {product ? "Edit Product" : "Add Product"}
       </Typography>
       <Box component="form" onSubmit={handleSubmit} className="!space-y-4">
@@ -173,10 +170,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700 border border-[var(--color-border)]",
+            className:
+              "!text-[var(--color-text-light)] border border-[var(--color-border)]",
           }}
           InputLabelProps={{
-            className: "text-gray-600",
+            className: "",
           }}
         />
         <TextField
@@ -190,7 +188,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700 border border-[var(--color-border)]",
+            className:
+              "!text-[var(--color-text-light)] border border-[var(--color-border)]",
           }}
           InputLabelProps={{
             className: "text-gray-600",
@@ -207,7 +206,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           rows={4}
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700 border border-[var(--color-border)]",
+            className:
+              "!text-[var(--color-text-light)] border border-[var(--color-border)]",
           }}
           InputLabelProps={{
             className: "text-gray-600",
@@ -224,7 +224,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700 border border-[var(--color-border)]",
+            className:
+              "!text-[var(--color-text-light)] border border-[var(--color-border)]",
           }}
         >
           {categories.map((cat) => (
@@ -244,17 +245,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
           required
           className="rounded-md"
           InputProps={{
-            className: "text-gray-700 border border-[var(--color-border)]",
+            className:
+              "!text-[var(--color-text-light)] border border-[var(--color-border)]",
           }}
           InputLabelProps={{
-            className: "text-gray-600",
+            className: "",
           }}
         />
         <Box>
-          <Typography
-            variant="body1"
-            className="text-gray-600 font-semibold mb-2"
-          >
+          <Typography variant="body1" className="font-semibold mb-2">
             Product Images
           </Typography>
           <input
@@ -262,7 +261,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             type="file"
             multiple
             onChange={handleImageChange}
-            className="block w-full text-sm text-gray-500
+            className="block w-full text-sm !text-[var(--color-text-light)]
               file:mr-4 file:py-2 file:px-4
               file:rounded-md file:border-0
               file:text-sm file:font-semibold
@@ -270,7 +269,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               hover:file:bg-blue-100"
           />
           <div className="flex gap-2 mt-2">
-            {images.map((image, index) => {
+            {images?.map((image, index) => {
               const imageUrl =
                 typeof image === "string"
                   ? image
@@ -302,7 +301,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             type="submit"
             variant="contained"
             color="primary"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
+            className="hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
           >
             Save
           </Button>

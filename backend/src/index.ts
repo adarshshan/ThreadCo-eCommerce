@@ -9,9 +9,16 @@ import { orderRoutes } from "./routes/OrderRoutes";
 import { adminRoutes } from "./routes/AdminRoutes";
 import { categoryRoutes } from "./routes/CategoryRoutes";
 import { contactRoutes } from "./routes/ContactRoutes";
+import { wishlistRoutes } from "./routes/WishlistRoutes";
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
+
+// app.use(
+//   cors({
+//     origin: "*",
+//   }),
+// );
 
 app.use(
   cors({
@@ -23,6 +30,7 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -33,10 +41,11 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 
 // Start Server
 const startServer = async () => {
-  app.listen(PORT, () => {
+  app.listen(3000, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`REST API endpoints available at http://localhost:${PORT}/api`);
   });

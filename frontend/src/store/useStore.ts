@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { User } from "../types/User";
 import type { CartItem } from "../types/Cart";
 import type { Product } from "../types/Product";
+import * as api from "../services/api";
 
 interface StoreState {
   user: User | null;
@@ -19,8 +20,9 @@ interface StoreState {
   clearCart: () => void;
 
   wishlist: Product[];
-  addToWishlist: (product: Product) => void;
-  removeFromWishlist: (productId: string | number) => void;
+  addToWishlist: (product: Product) => Promise<void>;
+  removeFromWishlist: (productId: string | number) => Promise<void>;
+  fetchWishlist: () => Promise<void>;
   
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
@@ -77,16 +79,46 @@ export const useStore = create<StoreState>()(
       clearCart: () => set({ cart: [] }),
 
       wishlist: [],
-      addToWishlist: (product) => {
-        const currentWishlist = get().wishlist;
-        if (!currentWishlist.find((item) => item._id === product._id)) {
-          set({ wishlist: [...currentWishlist, product] });
+      fetchWishlist: async () => {
+        if (!get().user) return;
+        try {
+          const { wishlist } = await api.getWishlist();
+          set({ wishlist });
+        } catch (error) {
+          console.error("Error fetching wishlist:", error);
         }
       },
-      removeFromWishlist: (productId) =>
-        set({
-          wishlist: get().wishlist.filter((item) => item._id !== productId),
-        }),
+      addToWishlist: async (product) => {
+        const currentWishlist = get().wishlist;
+        if (!currentWishlist.find((item) => item._id === product._id)) {
+          if (get().user) {
+            try {
+              const { wishlist } = await api.addToWishlist(product._id as string);
+              set({ wishlist });
+            } catch (error) {
+              console.error("Error adding to wishlist:", error);
+            }
+          } else {
+            set({ wishlist: [...currentWishlist, product] });
+          }
+        }
+      },
+      removeFromWishlist: async (productId) => {
+        if (get().user) {
+          try {
+            const { wishlist } = await api.removeFromWishlist(
+              productId as string,
+            );
+            set({ wishlist });
+          } catch (error) {
+            console.error("Error removing from wishlist:", error);
+          }
+        } else {
+          set({
+            wishlist: get().wishlist.filter((item) => item._id !== productId),
+          });
+        }
+      },
 
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
