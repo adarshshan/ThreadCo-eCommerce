@@ -3,6 +3,7 @@ import Slider from "react-slick";
 import cover01 from "../../assets/coverImages/kids-own-01.jpg";
 import cover02 from "../../assets/coverImages/kids-own-02.jpg";
 import cover03 from "../../assets/coverImages/kids-own-03.jpg";
+import NewArrivalsCarousel from "../../components/NewArrivalsCarousel";
 
 const HomePage: React.FC = () => {
   return (
@@ -10,6 +11,7 @@ const HomePage: React.FC = () => {
       <section className="relative overflow-hidden">
         <SlickComponent />
       </section>
+      <NewArrivalsCarousel />
       <div className="py-3 sm:py-12 bg-background">
         <ProductList />
       </div>

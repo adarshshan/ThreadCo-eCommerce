@@ -12,6 +12,7 @@ export interface ProductFilters {
   maxPrice?: number;
   search?: string;
   sort?: string;
+  limit?: number;
 }
 
 export const getProducts = async (
@@ -26,6 +27,7 @@ export const getProducts = async (
       params.append("maxPrice", filters.maxPrice.toString());
     if (filters.search) params.append("search", filters?.search);
     if (filters.sort) params.append("sort", filters?.sort);
+    if (filters.limit) params.append("limit", filters?.limit.toString());
   }
 
   const response = await axios.get(

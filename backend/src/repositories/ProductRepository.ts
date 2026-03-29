@@ -7,6 +7,7 @@ export interface ProductFilters {
   maxPrice?: number;
   search?: string;
   sort?: string;
+  limit?: number;
 }
 
 export interface IProductRepository {
@@ -58,10 +59,15 @@ export class ProductRepository implements IProductRepository {
       }
     }
 
-    return await ProductModel.find(query)
+    const findQuery = ProductModel.find(query)
       .populate("category")
-      .sort(sortOption)
-      .exec() as ProductDocument[];
+      .sort(sortOption);
+
+    if (filters.limit) {
+      findQuery.limit(filters.limit);
+    }
+
+    return (await findQuery.exec()) as ProductDocument[];
   }
 
   async findById(id: string): Promise<ProductDocument | null> {
