@@ -14,25 +14,28 @@ import { wishlistRoutes } from "./routes/WishlistRoutes";
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
-// app.use(
-//   cors({
-//     origin: "*",
-//   }),
-// );
-
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
+      // "http://127.0.0.1:5173",
       "http://172.26.58.12:5173",
     ],
     credentials: true,
+    // methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    // allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Allow Google Auth popups
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
 
 // Set up REST Routes
 app.use("/api/products", productRoutes);

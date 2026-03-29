@@ -190,6 +190,18 @@ export class OrderController {
         return;
       }
 
+      // Check 24-hour window
+      const orderDate = new Date(order?.createdAt);
+      const diffTime = Math.abs(Date.now() - orderDate.getTime());
+      const diffHours = diffTime / (1000 * 60 * 60);
+
+      if (diffHours > 24) {
+        res
+          .status(400)
+          .json({ message: "Cancellation period expired (24 hours)" });
+        return;
+      }
+
       order.status = "Cancelled";
       order.cancelReason = reason || "User cancelled";
       order.cancelDate = new Date();

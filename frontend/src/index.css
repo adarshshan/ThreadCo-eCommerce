@@ -104,3 +104,8 @@
   background-color: var(--color-surface-hover) !important;
   color: var(--color-text-light) !important;
 }
+
+.menu-drawer .MuiList-root {
+  background-color: "#ffffff" !important;
+  color: var(--color-text-light) !important;
+}

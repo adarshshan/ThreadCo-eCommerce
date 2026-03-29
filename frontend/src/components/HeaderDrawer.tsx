@@ -40,13 +40,13 @@ const HeaderDrawer: React.FC<HeaderDrawerInterface> = ({
       }}
     >
       <div className="h-full flex flex-col justify-between">
-        <div>
+        <div className="">
           <div className="py-6 border-b border-border">
             <h2 className="text-2xl font-serif font-bold text-white tracking-widest">
               VENDORA
             </h2>
           </div>
-          <List className="!ps-4">
+          <List className="!bg-transparent !ps-4">
             {navItems?.map((item) => (
               <ListItem key={item?.label} disablePadding>
                 <ListItemButton
@@ -66,7 +66,6 @@ const HeaderDrawer: React.FC<HeaderDrawerInterface> = ({
               </ListItem>
             ))}
             <ListItem onClick={() => navigate("/orders")} className="gap-2">
-              <LocalMall fontSize="small" className="text-white" />
               <ListItemText
                 primary={"My Orders"}
                 primaryTypographyProps={{
