@@ -55,6 +55,7 @@ export class ProductController {
       const product = await this.productService.createProduct({
         ...productData,
         images: JSON.parse(productData.images),
+        sizes: productData.sizes ? JSON.parse(productData.sizes) : [],
       });
       res.status(201).json(product);
     } catch (error) {
@@ -71,6 +72,7 @@ export class ProductController {
       const product = await this.productService.updateProduct(req.params.id, {
         ...productData,
         images: JSON.parse(productData.images),
+        sizes: productData.sizes ? JSON.parse(productData.sizes) : [],
       });
 
       if (!product) {

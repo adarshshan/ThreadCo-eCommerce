@@ -14,6 +14,7 @@ export interface ProductDocument extends Document {
   stock: number; // Total stock (sum of variants or standalone)
   category: Types.ObjectId | string;
   subCategory?: string;
+  sizes: string[];
   images: string[];
   variants: ProductVariant[];
   tags?: string[];
@@ -36,6 +37,7 @@ const productSchema = new Schema<ProductDocument>(
     stock: { type: Number, required: true, min: 0, default: 0 },
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
     subCategory: { type: String, trim: true },
+    sizes: { type: [String], default: [] },
     images: { type: [String], default: [] },
     variants: [variantSchema],
     tags: { type: [String], index: true },

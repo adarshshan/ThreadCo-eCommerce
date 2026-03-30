@@ -16,10 +16,14 @@ import Slider from "react-slick";
 import Loading from "../../components/Loading";
 import ProductCarousel from "../../components/ProductCarousel";
 
+const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "3XL"];
+
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [sizeError, setSizeError] = useState(false);
   const addToCart = useStore((state) => state.addToCart);
   const wishlist = useStore((state) => state.wishlist);
   const addToWishlist = useStore((state) => state.addToWishlist);
@@ -54,6 +58,16 @@ const ProductDetails: React.FC = () => {
       setSelectedImage(product?.images[0]);
     }
   }, [product]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    if (!selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    setSizeError(false);
+    addToCart(product, 1, selectedSize);
+  };
 
   const toggleWishlist = async () => {
     if (!product) return;
@@ -119,7 +133,7 @@ const ProductDetails: React.FC = () => {
                 </div>
 
                 <div className="block sm:hidden">
-                  <ImageSlider images={product.images}></ImageSlider>
+                  <ImageSlider images={product?.images}></ImageSlider>
                 </div>
               </div>
 
@@ -167,6 +181,48 @@ const ProductDetails: React.FC = () => {
                 </div>
               </div>
 
+              <div className="bg-surface-light/50 px-3 py-2 sm:p-6 rounded-2xl border border-border backdrop-blur-sm">
+                <div className="flex justify-between items-center mb-1">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-light)]">
+                    Select Size
+                  </h3>
+                  {sizeError && (
+                    <span className="text-xs font-bold text-red-500 uppercase animate-pulse">
+                      Please select a size
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {AVAILABLE_SIZES.map((size) => {
+                    const isAvailable = product?.sizes?.includes(size);
+                    const isSelected = selectedSize === size;
+
+                    return (
+                      <button
+                        key={size}
+                        disabled={!isAvailable}
+                        onClick={() => {
+                          setSelectedSize(size);
+                          setSizeError(false);
+                        }}
+                        className={`
+                          min-w-[48px] h-12 rounded-xl text-sm font-bold transition-all duration-300 border-2
+                          ${
+                            !isAvailable
+                              ? "border-border text-text-muted opacity-30 cursor-not-allowed line-through"
+                              : isSelected
+                                ? "border-accent bg-accent/10 text-accent shadow-[0_0_15px_rgba(56,189,248,0.2)]"
+                                : "border-border text-white hover:border-border-light hover:bg-surface-hover"
+                          }
+                        `}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="bg-surface-light/50 p-3 sm:p-6 rounded-2xl border border-border backdrop-blur-sm">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-light)] mb-3">
                   Product Description
@@ -179,7 +235,7 @@ const ProductDetails: React.FC = () => {
 
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => addToCart(product)}
+                  onClick={handleAddToCart}
                   className="bg-white btn-accent btn-lg flex-grow flex items-center justify-center gap-3 py-2 rounded-md cursor-pointer"
                 >
                   <ShoppingCartIcon />

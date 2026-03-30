@@ -7,10 +7,15 @@ import {
   Paper,
   IconButton,
   MenuItem,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import type { Product } from "../types/Product";
 import { getCategories } from "../services/api";
+
+const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "3XL"];
 
 interface ProductFormProps {
   product?: Product | null;
@@ -29,6 +34,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<any[]>([]);
   const [stock, setStock] = useState<number | null>(null);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [images, setImages] = useState<(File | string | null | undefined)[]>(
     [],
   );
@@ -49,13 +55,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setName(product.name);
       setPrice(product.price);
       setDescription(product?.description ?? "");
-      // Handle both string ID and populated object
       setCategory(
         typeof product?.category === "object"
           ? (product.category as any)._id
           : (product?.category ?? ""),
       );
       setStock(product?.stock ?? 0);
+      setSelectedSizes(product?.sizes ?? []);
       setImages(product.images ?? []);
     } else {
       setName("");
@@ -63,9 +69,16 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setDescription("");
       setCategory("");
       setStock(null);
+      setSelectedSizes([]);
       setImages([]);
     }
   }, [product]);
+
+  const handleSizeToggle = (size: string) => {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
+    );
+  };
 
   const uploadImage = (pic: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -107,12 +120,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPicMessage(null);
+
+    if (selectedSizes.length === 0) {
+      setPicMessage("Please select at least one size.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("price", price ? price.toString() : "0");
     formData.append("description", description);
     formData.append("category", category);
     formData.append("stock", stock ? stock.toString() : "0");
+    formData.append("sizes", JSON.stringify(selectedSizes));
 
     if (images.length > 0) {
       try {
@@ -296,6 +316,34 @@ const ProductForm: React.FC<ProductFormProps> = ({
             {picMessage}
           </Typography>
         </Box>
+
+        <Box>
+          <Typography variant="body1" className="font-semibold mb-2 text-[var(--color-text-light)]">
+            Available Sizes
+          </Typography>
+          <FormGroup row>
+            {AVAILABLE_SIZES.map((size) => (
+              <FormControlLabel
+                key={size}
+                control={
+                  <Checkbox
+                    checked={selectedSizes.includes(size)}
+                    onChange={() => handleSizeToggle(size)}
+                    sx={{
+                      color: "var(--color-border)",
+                      "&.Mui-checked": {
+                        color: "var(--color-accent)",
+                      },
+                    }}
+                  />
+                }
+                label={size}
+                className="text-[var(--color-text-light)]"
+              />
+            ))}
+          </FormGroup>
+        </Box>
+
         <Box className="flex justify-between mt-6">
           <Button
             type="submit"
