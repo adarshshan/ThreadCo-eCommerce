@@ -164,9 +164,21 @@ const ProductDetails: React.FC = () => {
               <div>
                 <div className="flex items-center text-[var(--color-text-light)] gap-2 mb-1 sm:mb-4">
                   <span className="badge badge-accent">New Arrival</span>
-                  <span className="text-text-muted text-xs font-bold uppercase tracking-tighter">
-                    In Stock
-                  </span>
+                  {product?.stock && product.stock > 0 ? (
+                    product.stock < 5 ? (
+                      <span className="badge bg-orange-500 text-white border-none text-xs font-bold uppercase tracking-tighter px-1 rounded-md">
+                        Only {product.stock} left
+                      </span>
+                    ) : (
+                      <span className="text-success text-xs font-bold uppercase tracking-tighter">
+                        In Stock
+                      </span>
+                    )
+                  ) : (
+                    <span className="badge bg-red-500 text-white border-none text-xs font-bold uppercase tracking-tighter px-1 rounded-md">
+                      Out of Stock
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-black text-[var(--color-text-light)] mb-4 leading-tight capitalize">
                   {product?.name}

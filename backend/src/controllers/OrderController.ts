@@ -19,6 +19,21 @@ export class OrderController {
     try {
       const { items } = req.body;
 
+      // Validate stock before creating Razorpay order
+      for (const item of items) {
+        const product = await ProductModel.findById(item.product);
+        if (!product) {
+          res.status(404).json({ message: `Product not found: ${item.name}` });
+          return;
+        }
+        if (product.stock < item.quantity) {
+          res.status(400).json({ 
+            message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+          });
+          return;
+        }
+      }
+
       // Calculate total price server-side to prevent tampering
       let totalAmount = 0;
       for (const item of items) {
@@ -115,11 +130,20 @@ export class OrderController {
 
       const createdOrder = await order.save();
 
-      // Update stock
+      // Update stock atomically and validate again
       for (const item of orderItems) {
-        await ProductModel.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.quantity },
-        });
+        const updatedProduct = await ProductModel.findOneAndUpdate(
+          { _id: item.product, stock: { $gte: item.quantity } },
+          { $inc: { stock: -item.quantity } },
+          { new: true }
+        );
+
+        if (!updatedProduct) {
+          // This should ideally not happen if createRazorpayOrder checked stock,
+          // but handles race conditions between payment and order creation.
+          console.error(`Stock race condition for product ${item.product}`);
+          // In a real system, you might want to trigger a manual refund or alert admin here
+        }
       }
 
       res.status(201).json(createdOrder);

@@ -44,16 +44,26 @@ export const useStore = create<StoreState>()(
       cart: [],
       addToCart: (product, quantity = 1, size, color) => {
         const currentCart = get().cart;
-        // Check if item exists with same ID, Size AND Color
-        const existingItemIndex = currentCart.findIndex(
+        
+        // Stock check
+        const existingItem = currentCart.find(
           (item) => item._id === product._id && item.selectedSize === size && item.selectedColor === color
         );
+        const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+        const totalRequestedQuantity = currentQuantityInCart + quantity;
 
-        if (existingItemIndex > -1) {
+        if (product.stock !== undefined && totalRequestedQuantity > product.stock) {
+          // You could trigger an alert here or handle it in UI
+          console.warn("Cannot add more than available stock");
+          return;
+        }
+
+        if (existingItem) {
           const newCart = [...currentCart];
-          newCart[existingItemIndex] = {
-            ...newCart[existingItemIndex],
-            quantity: newCart[existingItemIndex].quantity + quantity
+          const index = currentCart.indexOf(existingItem);
+          newCart[index] = {
+            ...newCart[index],
+            quantity: totalRequestedQuantity
           };
           set({ cart: newCart });
         } else {
@@ -68,14 +78,19 @@ export const useStore = create<StoreState>()(
             !(item._id === productId && item.selectedSize === size && item.selectedColor === color)
           ) 
         }),
-      updateQuantity: (productId, quantity, size, color) =>
+      updateQuantity: (productId, quantity, size, color) => {
+        const item = get().cart.find(i => i._id === productId && i.selectedSize === size && i.selectedColor === color);
+        if (item && item.stock !== undefined && quantity > item.stock) {
+          return;
+        }
         set({
           cart: get().cart.map((item) =>
             item._id === productId && item.selectedSize === size && item.selectedColor === color 
               ? { ...item, quantity } 
               : item
           ),
-        }),
+        });
+      },
       clearCart: () => set({ cart: [] }),
 
       wishlist: [],
