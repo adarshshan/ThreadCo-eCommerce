@@ -86,7 +86,7 @@ const NewArrivalsCarousel: React.FC = () => {
         <div className="mx-[-10px]">
           <Slider {...settings}>
             {products.map((product) => (
-              <div key={product._id} className="px-[10px] h-full pb-4">
+              <div key={product._id} className="px-[10px] h-full">
                 <ProductCard product={product} />
               </div>
             ))}

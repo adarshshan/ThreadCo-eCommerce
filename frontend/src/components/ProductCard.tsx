@@ -78,7 +78,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </span>
       )}
 
-      <div className="flex-1 flex flex-col p-2 sm:p-5">
+      <div className="flex-1 flex flex-col p-2 sm:px-5">
         <h3 className="text-lg font-bold truncate mb-1 text-white group-hover:text-accent transition-colors capitalize">
           {product?.name}
         </h3>
