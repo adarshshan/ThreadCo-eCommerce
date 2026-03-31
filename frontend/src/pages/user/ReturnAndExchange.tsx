@@ -1,6 +1,12 @@
+import { useEffect } from "react";
 import CustomButton from "../../components/Button";
 
 const ReturnAndExchange = () => {
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background py-5 text-[var(--color-text-light)] px-[1rem] lg:px-[8rem] xl:px-[20rem]">
       <h3>Return & Exchange Policy</h3>
