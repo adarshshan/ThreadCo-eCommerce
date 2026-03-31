@@ -64,7 +64,7 @@
   }
 
   p {
-    @apply leading-relaxed text-text-secondary mb-4;
+    @apply leading-relaxed text-text-secondary mb-2;
   }
 
   a {

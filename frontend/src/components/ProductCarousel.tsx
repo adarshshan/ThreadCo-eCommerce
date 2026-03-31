@@ -41,12 +41,12 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
     dots: false,
     infinite: products?.length > 4,
     speed: 500,
-    slidesToShow: 5,
-    slidesToScroll: 1,
+    slidesToShow: 3,
+    slidesToScroll: 2,
     responsive: [
       {
         breakpoint: 1280,
-        settings: { slidesToShow: 4 },
+        settings: { slidesToShow: 4, slidesToScroll: 4 },
       },
       {
         breakpoint: 1024,
@@ -56,9 +56,10 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
         breakpoint: 768,
         settings: { slidesToShow: 2 },
       },
+
       {
         breakpoint: 480,
-        settings: { slidesToShow: 1 }, // 👈 THIS is key
+        settings: { slidesToShow: 1, slideToScroll: 1 }, // 👈 THIS is key
       },
     ],
   };
