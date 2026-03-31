@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,6 +27,10 @@ const ContactUs: React.FC = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const {
     register,
@@ -60,9 +64,9 @@ const ContactUs: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-5 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-5 sm:mb-16">
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
             Contact Us
           </h1>
@@ -79,14 +83,14 @@ const ContactUs: React.FC = () => {
                 Get in Touch
               </h3>
 
-              <div className="space-y-6">
+              <div className="space-y-1">
                 <div className="flex items-start space-x-4">
                   <div className="bg-primary/20 p-3 rounded-full">
                     <PhoneIcon className="text-[var(--color-text-light)]" />
                   </div>
                   <div>
                     <p className="text-white font-semibold">Phone & Helpline</p>
-                    <p className="text-text-secondary">+1 (234) 567-890</p>
+                    <p className="text-text-secondary">+91 7356683993</p>
                     <p className="text-text-secondary">
                       1-800-KIDS-OWN (Toll Free)
                     </p>
@@ -99,7 +103,9 @@ const ContactUs: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-white font-semibold">Email Address</p>
-                    <p className="text-text-secondary">support@kidsown.com</p>
+                    <p className="text-text-secondary">
+                      officialsadarsh7@gmail.com
+                    </p>
                     <p className="text-text-secondary">info@kidsown.com</p>
                   </div>
                 </div>
@@ -111,11 +117,9 @@ const ContactUs: React.FC = () => {
                   <div>
                     <p className="text-white font-semibold">Physical Address</p>
                     <p className="text-text-secondary">
-                      123 Fashion Street, Suite 456
+                      Kootilangadi, Malappuram
                     </p>
-                    <p className="text-text-secondary">
-                      New York, NY 10001, USA
-                    </p>
+                    <p className="text-text-secondary">Kerala, India 676506</p>
                   </div>
                 </div>
 

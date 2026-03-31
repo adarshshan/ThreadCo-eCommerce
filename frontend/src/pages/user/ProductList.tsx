@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Product } from "../../types/Product";
-import { getProducts, getCategories, getSearchSuggestions } from "../../services/api";
+import {
+  getProducts,
+  getCategories,
+  getSearchSuggestions,
+} from "../../services/api";
 import type { ProductFilters } from "../../services/api";
 import ProductCard from "../../components/ProductCard";
 import {
@@ -123,7 +127,10 @@ const ProductList: React.FC = () => {
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
@@ -193,7 +200,7 @@ const ProductList: React.FC = () => {
             </span>
           ) : (
             part
-          )
+          ),
         )}
       </span>
     );
@@ -339,11 +346,12 @@ const ProductList: React.FC = () => {
               </SearchContainer>
 
               {/* Autocomplete Dropdown */}
-              {showDropdown && (searchQuery.trim().length >= 2) && (
+              {showDropdown && searchQuery.trim().length >= 2 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[300px] max-h-[400px] overflow-y-auto">
-                  {suggestions.products.length === 0 && 
-                   suggestions.categories.length === 0 && 
-                   suggestions.brands.length === 0 && !loadingSuggestions ? (
+                  {suggestions.products.length === 0 &&
+                  suggestions.categories.length === 0 &&
+                  suggestions.brands.length === 0 &&
+                  !loadingSuggestions ? (
                     <div className="p-4 text-center text-text-secondary text-sm">
                       No results found for "{searchQuery}"
                     </div>
@@ -372,7 +380,9 @@ const ProductList: React.FC = () => {
                                 <p className="text-sm font-medium text-white truncate">
                                   {highlightMatch(product.name, searchQuery)}
                                 </p>
-                                <p className="text-xs text-text-secondary">₹{product.price}</p>
+                                <p className="text-xs text-text-secondary">
+                                  ₹{product.price}
+                                </p>
                               </div>
                             </div>
                           ))}
@@ -391,9 +401,12 @@ const ProductList: React.FC = () => {
                                 handleCategoryChange(cat.slug); // Assuming slug can be used as category filter or we need _id
                                 // If categories filter uses _id, we might need to find the category object first
                                 // For now, setting it via slug if API supports it, or finding it in categories state
-                                const categoryObj = categories.find(c => c.slug === cat.slug);
-                                if (categoryObj) handleCategoryChange(categoryObj._id);
-                                
+                                const categoryObj = categories.find(
+                                  (c) => c.slug === cat.slug,
+                                );
+                                if (categoryObj)
+                                  handleCategoryChange(categoryObj._id);
+
                                 setSearchQuery("");
                                 setShowDropdown(false);
                               }}
@@ -414,7 +427,10 @@ const ProductList: React.FC = () => {
                             <div
                               key={brand.name}
                               onClick={() => {
-                                setFilters(prev => ({ ...prev, brand: brand.name }));
+                                setFilters((prev) => ({
+                                  ...prev,
+                                  brand: brand.name,
+                                }));
                                 setSearchQuery("");
                                 setShowDropdown(false);
                               }}
@@ -499,8 +515,8 @@ const ProductList: React.FC = () => {
                 {[...Array(8)].map((_, i) => (
                   <div
                     key={i}
-                    className="card h-[400px] animate-pulse bg-surface-light"
-                  ></div>
+                    className="card h-[260px] sm:h-[350px] animate-pulse bg-surface-light"
+                  />
                 ))}
               </div>
             ) : isError ? (
