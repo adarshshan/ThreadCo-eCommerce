@@ -18,6 +18,7 @@ import ContactUs from "./pages/user/ContactUs";
 import Wishlist from "./pages/user/Wishlist";
 import ContactManagement from "./pages/admin/ContactManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ReturnAndExchange from "./pages/user/ReturnAndExchange";
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
       {
         path: "/contact",
         element: <ContactUs />,
+      },
+      {
+        path: "/return&exchange",
+        element: <ReturnAndExchange />,
       },
       // Protected User Routes
       {

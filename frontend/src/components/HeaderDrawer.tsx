@@ -1,4 +1,17 @@
-import { LocalMall, Logout } from "@mui/icons-material";
+import React from "react";
+import {
+  Logout,
+  Close,
+  Home,
+  ShoppingBag,
+  ContactSupport,
+  SwapHoriz,
+  Favorite,
+  ShoppingCart,
+  Dashboard,
+  Login,
+  Person,
+} from "@mui/icons-material";
 import {
   Avatar,
   Box,
@@ -8,9 +21,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  MenuItem,
+  IconButton,
+  Divider,
+  Typography,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useStore } from "../store/useStore";
 
 interface HeaderDrawerInterface {
@@ -27,93 +42,297 @@ const HeaderDrawer: React.FC<HeaderDrawerInterface> = ({
   handleDrawerToggle,
   mobileOpen,
 }) => {
-  const user = useStore((state) => state?.user);
-  const cart = useStore((state) => state.cart);
   const navigate = useNavigate();
+  const location = useLocation();
+  const user = useStore((state) => state.user);
+  const logout = useStore((state) => state.logout);
+  const cart = useStore((state) => state.cart);
+  const wishlist = useStore((state) => state.wishlist);
+
+  const handleNavigation = (path: string) => {
+    handleDrawerToggle();
+    navigate(path);
+  };
+
+  const handleLogout = () => {
+    handleDrawerToggle();
+    logout();
+    navigate("/login");
+  };
+
+  const getIcon = (label: string) => {
+    switch (label.toLowerCase()) {
+      case "home":
+        return <Home />;
+      case "products":
+        return <ShoppingBag />;
+      case "contact support":
+        return <ContactSupport />;
+      case "returns & exchanges":
+        return <SwapHoriz />;
+      default:
+        return <ShoppingBag />;
+    }
+  };
+
   const drawer = (
     <Box
-      onClick={handleDrawerToggle}
       sx={{
-        textAlign: "center",
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "var(--color-surface)",
+        color: "var(--color-text-primary)",
       }}
     >
-      <div className="h-full flex flex-col justify-between">
-        <div className="">
-          <div className="py-6 border-b border-border">
-            <h2 className="text-2xl font-serif font-bold text-white tracking-widest">
-              VENDORA
-            </h2>
-          </div>
-          <List className="!bg-transparent !ps-4">
-            {navItems?.map((item) => (
-              <ListItem key={item?.label} disablePadding>
-                <ListItemButton
-                  sx={{ textAlign: "left", py: 2 }}
-                  onClick={() => navigate(item.path)}
-                >
-                  <ListItemText
-                    primary={item.label}
-                    primaryTypographyProps={{
-                      style: {
-                        color: "var(--color-text-primary)",
-                        fontWeight: 600,
-                      },
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-            <ListItem onClick={() => navigate("/orders")} className="gap-2">
-              <ListItemText
-                primary={"My Orders"}
-                primaryTypographyProps={{
-                  style: {
-                    color: "var(--color-text-primary)",
-                    fontWeight: 600,
-                  },
-                }}
-              />
-            </ListItem>
-            <ListItem disablePadding>
+      {/* Header */}
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid var(--color-border)",
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontFamily: "var(--font-serif)",
+            fontWeight: 900,
+            letterSpacing: "0.1em",
+            color: "white",
+          }}
+        >
+          VENDORA
+        </Typography>
+        <IconButton
+          onClick={handleDrawerToggle}
+          sx={{ color: "var(--color-text-secondary)" }}
+        >
+          <Close />
+        </IconButton>
+      </Box>
+
+      {/* Navigation List */}
+      <Box sx={{ flex: 1, overflowY: "auto", py: 2 }}>
+        <List sx={{ px: 1 }} className="!bg-transparent">
+          {navItems.map((item) => (
+            <ListItem key={item.label} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
-                sx={{ textAlign: "left", py: 2 }}
-                onClick={() => navigate("/cart")}
+                onClick={() => handleNavigation(item.path)}
+                selected={location.pathname === item.path}
+                sx={{
+                  borderRadius: "8px",
+                  "&.Mui-selected": {
+                    bgcolor: "rgba(56, 189, 248, 0.1)",
+                    color: "var(--color-accent)",
+                    "& .MuiListItemIcon-root": { color: "var(--color-accent)" },
+                  },
+                  "&:hover": { bgcolor: "var(--color-surface-hover)" },
+                }}
               >
+                <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                  {getIcon(item.label)}
+                </ListItemIcon>
                 <ListItemText
-                  primary={`Cart (${cart.length})`}
+                  primary={item.label}
                   primaryTypographyProps={{
-                    style: {
-                      color: "var(--color-text-primary)",
-                      fontWeight: 600,
-                    },
+                    fontWeight: location.pathname === item.path ? 700 : 500,
+                    fontSize: "0.95rem",
                   }}
                 />
               </ListItemButton>
             </ListItem>
-          </List>
-        </div>
-        <div className="px-4 flex justify-between items-center">
+          ))}
+
+          <Divider
+            sx={{
+              my: 2,
+              mx: 1,
+              borderColor: "var(--color-border)",
+              opacity: 0.5,
+            }}
+          />
+
+          {/* User Specific Items */}
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleNavigation("/wishlist")}
+              selected={location.pathname === "/wishlist"}
+              sx={{ borderRadius: "8px" }}
+            >
+              <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                <Favorite />
+              </ListItemIcon>
+              <ListItemText
+                primary={`Wishlist (${wishlist.length})`}
+                primaryTypographyProps={{
+                  fontWeight: 500,
+                  fontSize: "0.95rem",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleNavigation("/cart")}
+              selected={location.pathname === "/cart"}
+              sx={{ borderRadius: "8px" }}
+            >
+              <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                <ShoppingCart />
+              </ListItemIcon>
+              <ListItemText
+                primary={`My Cart (${cart.length})`}
+                primaryTypographyProps={{
+                  fontWeight: 500,
+                  fontSize: "0.95rem",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+
           {user && (
-            <div className="flex gap-1 items-center">
-              <Avatar>{user?.name?.charAt(0)}</Avatar>
-            </div>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => handleNavigation("/orders")}
+                selected={location.pathname === "/orders"}
+                sx={{ borderRadius: "8px" }}
+              >
+                <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                  <Person />
+                </ListItemIcon>
+                <ListItemText
+                  primary="My Orders"
+                  primaryTypographyProps={{
+                    fontWeight: 500,
+                    fontSize: "0.95rem",
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
           )}
 
-          <MenuItem sx={{ color: "var(--color-error) !important" }}>
-            <ListItemIcon sx={{ color: "var(--color-error) !important" }}>
-              <Logout fontSize="small" />
+          {user?.role === "admin" && (
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => handleNavigation("/admin")}
+                sx={{ borderRadius: "8px", color: "var(--color-accent)" }}
+              >
+                <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                  <Dashboard />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Admin Dashboard"
+                  primaryTypographyProps={{
+                    fontWeight: 600,
+                    fontSize: "0.95rem",
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          )}
+        </List>
+      </Box>
+
+      {/* Footer / User Section */}
+      <Box
+        sx={{
+          p: 2,
+          borderTop: "1px solid var(--color-border)",
+          bgcolor: "var(--color-surface-light)",
+        }}
+      >
+        {user ? (
+          <Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                mb: 2,
+                px: 1,
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: "var(--color-accent)",
+                  color: "var(--color-background)",
+                  fontWeight: 700,
+                  width: 40,
+                  height: 40,
+                }}
+              >
+                {user.name.charAt(0).toUpperCase()}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 700, color: "white" }}
+                  noWrap
+                >
+                  {user.name}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "var(--color-text-muted)" }}
+                  noWrap
+                >
+                  {user.email}
+                </Typography>
+              </Box>
+            </Box>
+            <ListItemButton
+              onClick={handleLogout}
+              sx={{
+                borderRadius: "8px",
+                color: "var(--color-error)",
+                "&:hover": { bgcolor: "rgba(239, 68, 68, 0.1)" },
+              }}
+            >
+              <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                <Logout />
+              </ListItemIcon>
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                }}
+              />
+            </ListItemButton>
+          </Box>
+        ) : (
+          <ListItemButton
+            onClick={() => handleNavigation("/login")}
+            sx={{
+              borderRadius: "8px",
+              bgcolor: "var(--color-accent)",
+              color: "var(--color-background)",
+              "&:hover": {
+                bgcolor: "var(--color-accent-hover)",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+              <Login />
             </ListItemIcon>
-            Logout
-          </MenuItem>
-        </div>
-      </div>
+            <ListItemText
+              primary="Login / Register"
+              primaryTypographyProps={{ fontWeight: 700, fontSize: "0.95rem" }}
+            />
+          </ListItemButton>
+        )}
+      </Box>
     </Box>
   );
+
   return (
     <Drawer
       variant="temporary"
+      anchor="left"
       open={mobileOpen}
       onClose={handleDrawerToggle}
       ModalProps={{
@@ -123,9 +342,9 @@ const HeaderDrawer: React.FC<HeaderDrawerInterface> = ({
         display: { xs: "block", md: "none" },
         "& .MuiDrawer-paper": {
           boxSizing: "border-box",
-          width: 280,
-          bgcolor: "var(--color-surface)",
-          borderRight: "1px solid var(--color-border)",
+          width: 300,
+          bgcolor: "transparent",
+          border: "none",
         },
       }}
     >

@@ -15,6 +15,10 @@ const Wishlist: React.FC = () => {
   const removeFromWishlist = useStore((state) => state.removeFromWishlist);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     fetchWishlist();
   }, [fetchWishlist]);
 
