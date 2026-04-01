@@ -1,87 +1,15 @@
 import { Request, Response } from "express";
-import Razorpay from "razorpay";
-import crypto from "crypto";
-import { OrderModel } from "../models/OrderSchema";
-import { ProductModel } from "../models/productsSchema";
-import { notificationService } from "../services/NotificationService";
+import { OrderService } from "../services/OrderService";
 
 export class OrderController {
-  private razorpay: Razorpay;
-
-  constructor() {
-    this.razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID as string,
-      key_secret: process.env.RAZORPAY_KEY_SECRET as string,
-    });
-  }
+  constructor(private orderService: OrderService) {}
 
   // Create Razorpay Order
   async createRazorpayOrder(req: Request, res: Response): Promise<void> {
     try {
       const { items } = req.body;
-
-      // Validate stock before creating Razorpay order
-      for (const item of items) {
-        const product = await ProductModel.findById(item?.product);
-        if (!product) {
-          res.status(404).json({ message: `Product not found: ${item?.name}` });
-          return;
-        }
-
-        if (product?.hasSizes) {
-          if (!item.size) {
-            res.status(400).json({
-              message: `Size is required for product: ${product.name}`,
-            });
-            return;
-          }
-
-          const sizeObj = product.sizes.find((s) => s.size === item.size);
-          if (!sizeObj || sizeObj.stock < item.quantity) {
-            res.status(400).json({
-              message: `Insufficient stock for ${product.name} (Size: ${item.size}). Available: ${sizeObj ? sizeObj.stock : 0}`,
-            });
-            return;
-          }
-        } else {
-          if (product.stock < item.quantity) {
-            res.status(400).json({
-              message: `Insufficient stock for ${product.name}. Available: ${product.stock}`,
-            });
-            return;
-          }
-        }
-      }
-
-      // Calculate total price server-side to prevent tampering
-      let totalAmount = 0;
-      for (const item of items) {
-        const product = await ProductModel.findById(item?.product);
-        if (product) {
-          totalAmount += product.price * item.quantity;
-        }
-      }
-
-      // Add tax and shipping logic here if needed
-      // const taxAmount = totalAmount * 0.1; // Example 10% tax
-      const shippingAmount = totalAmount > 100 ? 0 : 10; // Free shipping over $100
-      const finalAmount = totalAmount + shippingAmount;
-
-      const options = {
-        amount: Math.round(finalAmount * 100), // Razorpay expects amount in paise
-        currency: "INR", // Changed to INR as Razorpay is common in India
-        receipt: `receipt_${Date.now()}`,
-      };
-
-      const order = await this.razorpay.orders.create(options);
-
-      res.send({
-        orderId: order?.id,
-        amount: finalAmount,
-        // tax: taxAmount,
-        shipping: shippingAmount,
-        currency: order?.currency,
-      });
+      const order = await this.orderService.createRazorpayOrder(items);
+      res.send(order);
     } catch (error: any) {
       console.log(error as Error);
       res.status(500).json({ message: error.message });
@@ -93,16 +21,13 @@ export class OrderController {
     try {
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
         req.body;
+      const isValid = await this.orderService.verifyPayment(
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      );
 
-      const body = razorpay_order_id + "|" + razorpay_payment_id;
-      const expectedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
-        .update(body.toString())
-        .digest("hex");
-
-      const isSignatureValid = expectedSignature === razorpay_signature;
-
-      if (isSignatureValid) {
+      if (isValid) {
         res.json({ message: "Payment verified successfully", success: true });
       } else {
         res.status(400).json({ message: "Invalid signature", success: false });
@@ -116,81 +41,10 @@ export class OrderController {
   async createOrder(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).userId;
-      const {
-        orderItems,
-        shippingAddress,
-        paymentMethod,
-        itemsPrice,
-        taxPrice,
-        shippingPrice,
-        totalPrice,
-        paymentResult,
-      } = req.body;
-
-      if (orderItems && orderItems.length === 0) {
-        res.status(400).json({ message: "No order items" });
-        return;
-      }
-
-      const order = new OrderModel({
-        user: userId, // Assumes auth middleware populates user
-        items: orderItems,
-        shippingAddress,
-        paymentMethod,
-        paymentResult,
-        itemsPrice,
-        taxPrice,
-        shippingPrice,
-        totalPrice,
-        isPaid: true,
-        paidAt: Date.now(),
-        status: "Processing",
-      });
-
-      const createdOrder = await order.save();
-
-      // Notify Admin
-      const orderWithUser: any = await OrderModel.findById(
-        createdOrder?._id,
-      ).populate("user", "name");
-      notificationService.notifyAdmin({
-        eventType: "Placed",
-        orderId: String(createdOrder?._id),
-        customerName: orderWithUser?.user?.name || "Unknown",
-        amount: createdOrder?.totalPrice,
-        items: createdOrder?.items,
-      });
-
-      // Update stock atomically and validate again
-      for (const item of orderItems) {
-        let updatedProduct;
-        const product = await ProductModel.findById(item?.product);
-
-        if (product?.hasSizes) {
-          updatedProduct = await ProductModel.findOneAndUpdate(
-            {
-              _id: item?.product,
-              "sizes.size": item?.size,
-              "sizes.stock": { $gte: item?.quantity },
-            },
-            { $inc: { "sizes.$.stock": -item?.quantity } },
-            { new: true },
-          );
-        } else {
-          updatedProduct = await ProductModel.findOneAndUpdate(
-            { _id: item?.product, stock: { $gte: item?.quantity } },
-            { $inc: { stock: -item?.quantity } },
-            { new: true },
-          );
-        }
-
-        if (!updatedProduct) {
-          console.error(
-            `Stock race condition for product ${item?.product} (Size: ${item?.size})`,
-          );
-        }
-      }
-
+      const createdOrder = await this.orderService.createOrder(
+        userId,
+        req.body,
+      );
       res.status(201).json(createdOrder);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -200,9 +54,7 @@ export class OrderController {
   async getMyOrders(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).userId;
-      const orders = await OrderModel.find({
-        user: userId,
-      }).sort({ createdAt: -1 });
+      const orders = await this.orderService.getMyOrders(userId);
       res.json(orders);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -212,11 +64,7 @@ export class OrderController {
   async getOrderById(req: Request, res: Response): Promise<void> {
     try {
       const orderId = req.params.id;
-
-      const order = await OrderModel.findById(orderId).populate(
-        "user",
-        "name email",
-      );
+      const order = await this.orderService.getOrderById(orderId);
       if (order) {
         res.json(order);
       } else {
@@ -234,88 +82,11 @@ export class OrderController {
     try {
       const { reason } = req.body;
       const userId = (req as any).userId;
-      const order = await OrderModel.findById(req.params.id);
-
-      if (!order) {
-        res.status(404).json({ message: "Order not found" });
-        return;
-      }
-
-      // Check ownership
-      if (order.user.toString() !== userId) {
-        res.status(401).json({ message: "Not authorized" });
-        return;
-      }
-
-      // Check status
-      if (
-        order.status === "Shipped" ||
-        order.status === "Delivered" ||
-        order.status === "Cancelled"
-      ) {
-        res.status(400).json({
-          message: `Cannot cancel order with status: ${order.status}`,
-        });
-        return;
-      }
-
-      // Check 24-hour window
-      const orderDate = new Date(order?.createdAt);
-      const diffTime = Math.abs(Date.now() - orderDate.getTime());
-      const diffHours = diffTime / (1000 * 60 * 60);
-
-      if (diffHours > 24) {
-        res
-          .status(400)
-          .json({ message: "Cancellation period expired (24 hours)" });
-        return;
-      }
-
-      order.status = "Cancelled";
-      order.cancelReason = reason || "User cancelled";
-      order.cancelDate = new Date();
-
-      // Initiate refund if paid
-      if (order.isPaid && order.paymentResult?.id) {
-        await this.processRefund(order);
-      }
-
-      const updatedOrder = await order.save();
-
-      // Notify Admin
-      const orderWithUser: any = await OrderModel.findById(
-        updatedOrder._id,
-      ).populate("user", "name");
-      notificationService.notifyAdmin({
-        eventType: "Cancelled",
-        orderId: String(updatedOrder._id),
-        customerName: orderWithUser?.user?.name || "Unknown",
-        amount: updatedOrder.totalPrice,
-        items: updatedOrder.items,
-      });
-
-      // Restore stock
-      for (const item of order.items) {
-        if (item.size) {
-          // Check if product still has sizes (schema might have changed, but usually we follow order record)
-          const product = await ProductModel.findById(item.product);
-          if (product?.hasSizes) {
-            await ProductModel.findOneAndUpdate(
-              { _id: item.product, "sizes.size": item.size },
-              { $inc: { "sizes.$.stock": item.quantity } },
-            );
-          } else {
-            await ProductModel.findByIdAndUpdate(item.product, {
-              $inc: { stock: item.quantity },
-            });
-          }
-        } else {
-          await ProductModel.findByIdAndUpdate(item.product, {
-            $inc: { stock: item.quantity },
-          });
-        }
-      }
-
+      const updatedOrder = await this.orderService.cancelOrder(
+        req.params.id,
+        userId,
+        reason,
+      );
       res.json(updatedOrder);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -327,78 +98,13 @@ export class OrderController {
     try {
       const { orderId, productId, reason, customReason } = req.body;
       const userId = (req as any).userId;
-
-      if (!orderId || !productId || !reason) {
-        res
-          .status(400)
-          .json({ message: "Order ID, Product ID, and Reason are required" });
-        return;
-      }
-
-      if (reason === "Other" && !customReason) {
-        res
-          .status(400)
-          .json({ message: "Custom reason is required for 'Other' option" });
-        return;
-      }
-
-      const order = await OrderModel.findById(orderId);
-
-      if (!order) {
-        res.status(404).json({ message: "Order not found" });
-        return;
-      }
-
-      // Check ownership
-      if (order.user.toString() !== userId) {
-        res.status(401).json({ message: "Not authorized" });
-        return;
-      }
-
-      // Check order status
-      if (order.status !== "Delivered") {
-        res
-          .status(400)
-          .json({ message: "Returns are only allowed for delivered orders" });
-        return;
-      }
-
-      // Find the specific item
-      const item = order.items.find((i) => i.product.toString() === productId);
-
-      if (!item) {
-        res.status(404).json({ message: "Product not found in this order" });
-        return;
-      }
-
-      // Check if already returned/requested
-      if (item.returnStatus && item.returnStatus !== "None") {
-        res.status(400).json({
-          message: `Return already ${item.returnStatus.toLowerCase()}`,
-        });
-        return;
-      }
-
-      // Check 5-day window (CRITICAL)
-      const deliveryDate = order.deliveredAt
-        ? new Date(order.deliveredAt)
-        : new Date();
-      const diffTime = Date.now() - deliveryDate.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-      if (diffDays > 5) {
-        res
-          .status(400)
-          .json({ message: "Return period expired (5 days limit)" });
-        return;
-      }
-
-      // Update item return status
-      item.returnStatus = "Requested";
-      item.returnReason = reason;
-      item.customReturnReason = customReason;
-
-      const updatedOrder = await order.save();
+      const updatedOrder = await this.orderService.requestReturn(
+        orderId,
+        productId,
+        userId,
+        reason,
+        customReason,
+      );
       res.json({
         message: "Return request submitted successfully",
         order: updatedOrder,
@@ -413,17 +119,9 @@ export class OrderController {
   // Get All Orders (Admin)
   async getAllOrders(req: Request, res: Response): Promise<void> {
     try {
-      const pageSize = 10;
-      const page = Number(req.query.pageNumber) || 1;
-
-      const count = await OrderModel.countDocuments({});
-      const orders = await OrderModel.find({})
-        .populate("user", "id name")
-        .sort({ createdAt: -1 }) // Newest first
-        .limit(pageSize)
-        .skip(pageSize * (page - 1));
-
-      res.json({ orders, page, pages: Math.ceil(count / pageSize) });
+      const pageNumber = Number(req.query.pageNumber) || 1;
+      const result = await this.orderService.getAllOrders(pageNumber);
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -433,21 +131,10 @@ export class OrderController {
   async updateOrderStatus(req: Request, res: Response): Promise<void> {
     try {
       const { status } = req.body;
-      const order = await OrderModel.findById(req.params.id);
-
-      if (!order) {
-        res.status(404).json({ message: "Order not found" });
-        return;
-      }
-
-      order.status = status;
-
-      if (status === "Delivered") {
-        order.isDelivered = true;
-        order.deliveredAt = new Date();
-      }
-
-      const updatedOrder = await order.save();
+      const updatedOrder = await this.orderService.updateOrderStatus(
+        req.params.id,
+        status,
+      );
       res.json(updatedOrder);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -457,114 +144,15 @@ export class OrderController {
   // Handle Return Request (Admin)
   async handleReturnRequest(req: Request, res: Response): Promise<void> {
     try {
-      const { status, productId } = req.body; // "Approved" or "Rejected"
-      const order = await OrderModel.findById(req.params.id);
-
-      if (!order) {
-        res.status(404).json({ message: "Order not found" });
-        return;
-      }
-
-      if (productId) {
-        // Item-level return
-        const item = order.items.find(
-          (i) => i.product.toString() === productId,
-        );
-        if (!item) {
-          res.status(404).json({ message: "Product not found in this order" });
-          return;
-        }
-
-        if (item.returnStatus !== "Requested") {
-          res
-            .status(400)
-            .json({ message: "No pending return request for this item" });
-          return;
-        }
-
-        item.returnStatus = status;
-
-        if (status === "Approved") {
-          // You might want to update order level status too if all items are returned
-          const allItemsReturned = order.items.every(
-            (i) =>
-              i.returnStatus === "Approved" || i.returnStatus === "Refunded",
-          );
-          if (allItemsReturned) {
-            order.status = "Returned";
-          }
-          // Note: In real production, you might want to partial refund or check payment ID validity
-        }
-      } else {
-        // Legacy/Whole order return
-        if (order.returnStatus !== "Requested") {
-          res.status(400).json({ message: "No pending return request" });
-          return;
-        }
-
-        order.returnStatus = status;
-
-        if (status === "Approved") {
-          order.status = "Returned";
-          // Update all items status to Approved
-          order.items.forEach((item) => {
-            if (item.returnStatus === "Requested") {
-              item.returnStatus = "Approved";
-            }
-          });
-          await this.processRefund(order);
-        }
-      }
-
-      const updatedOrder = await order.save();
-
-      // Notify Admin on Approval
-      if (status === "Approved") {
-        const orderWithUser: any = await OrderModel.findById(
-          updatedOrder?._id,
-        ).populate("user", "name");
-        notificationService.notifyAdmin({
-          eventType: "Returned",
-          orderId: String(updatedOrder?._id),
-          customerName: orderWithUser?.user?.name || "Unknown",
-          amount: updatedOrder.totalPrice,
-          items: updatedOrder?.items?.filter(
-            (i) => i?.returnStatus === "Approved",
-          ),
-        });
-      }
-
+      const { status, productId } = req.body;
+      const updatedOrder = await this.orderService.handleReturnRequest(
+        req.params.id,
+        status,
+        productId,
+      );
       res.json(updatedOrder);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
-    }
-  }
-
-  // --- HELPERS ---
-
-  private async processRefund(order: any): Promise<void> {
-    try {
-      if (order.refundId) return; // Already refunded
-
-      // Razorpay refund
-      // Note: In real production, you might want to partial refund or check payment ID validity
-      const paymentId = order.paymentResult?.id;
-      if (!paymentId) return;
-
-      const refund = await this.razorpay.payments.refund(paymentId, {
-        amount: Math.round(order.totalPrice * 100), // Amount in paise
-        speed: "normal",
-        receipt: `refund_${order._id}`,
-      });
-
-      order.refundId = refund.id;
-      order.refundAmount = order.totalPrice;
-      order.refundStatus = refund.status;
-      order.refundDate = new Date();
-    } catch (error: any) {
-      console.error("Refund failed:", error);
-      order.refundStatus = "Failed";
-      // Do not throw, just log so the status update persists
     }
   }
 }

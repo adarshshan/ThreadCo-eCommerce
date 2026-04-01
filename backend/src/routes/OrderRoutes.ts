@@ -1,9 +1,16 @@
 import { Router } from "express";
 import { OrderController } from "../controllers/OrderController";
 import { protect, admin } from "../middleware/auth";
+import { OrderService } from "../services/OrderService";
+import { OrderRepository } from "../repositories/OrderRepository";
+import { ProductRepository } from "../repositories/ProductRepository";
 
 const router = Router();
-const orderController = new OrderController();
+
+const orderRepository = new OrderRepository();
+const productRepository = new ProductRepository();
+const orderService = new OrderService(orderRepository, productRepository);
+const orderController = new OrderController(orderService);
 
 router.post("/create-razorpay-order", protect, (req, res) => orderController.createRazorpayOrder(req, res));
 router.post("/verify-payment", protect, (req, res) => orderController.verifyPayment(req, res));
