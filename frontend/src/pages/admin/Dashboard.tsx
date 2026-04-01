@@ -93,7 +93,7 @@ const Dashboard = () => {
               Total Revenue
             </Typography>
             <Typography variant="h4" className="!text-white !font-bold">
-              ${stats?.totalRevenue?.toFixed(2)}
+              ₹{stats?.totalRevenue?.toLocaleString("en-IN")}
             </Typography>
           </Paper>
         </Grid>
@@ -144,7 +144,7 @@ const Dashboard = () => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="font-medium text-white">
-                    ${order?.totalPrice?.toFixed(2)}
+                    ₹{order?.totalPrice?.toLocaleString("en-IN")}
                   </div>
                 </td>
                 <td className="px-6 py-4">

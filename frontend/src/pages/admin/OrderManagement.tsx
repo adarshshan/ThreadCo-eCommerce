@@ -7,16 +7,17 @@ import {
 import type { Order } from "../../types/Order";
 import CustomModal from "../../components/Modal";
 import { format } from "date-fns";
+import { Tooltip } from "@mui/material";
 
 const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Selected Order for Details Modal
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     fetchOrders();
@@ -26,9 +27,9 @@ const OrderManagement: React.FC = () => {
     try {
       setLoading(true);
       const data = await getAllOrders(page);
-      setOrders(data.orders);
-      setPage(data.page);
-      setTotalPages(data.pages);
+      setOrders(data?.orders);
+      setPage(data?.page);
+      setTotalPages(data?.pages);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -41,7 +42,7 @@ const OrderManagement: React.FC = () => {
     try {
       await updateOrderStatus(id, status);
       fetchOrders();
-      if (selectedOrder && selectedOrder._id === id) {
+      if (selectedOrder && selectedOrder?._id === id) {
         setIsDetailsOpen(false); // Close modal on update
       }
     } catch (error) {
@@ -71,10 +72,10 @@ const OrderManagement: React.FC = () => {
   };
 
   const hasPendingReturns = (order: Order) => {
-    return order.items.some((item) => item.returnStatus === "Requested");
+    return order?.items?.some((item) => item?.returnStatus === "Requested");
   };
 
-  if (loading && orders.length === 0) return <div>Loading...</div>;
+  if (loading && orders?.length === 0) return <div>Loading...</div>;
 
   return (
     <div className="p-6 bg-background min-h-screen text-text-primary">
@@ -135,46 +136,52 @@ const OrderManagement: React.FC = () => {
                   key={order?._id}
                   className="hover:bg-surface-hover/30 transition-colors group"
                 >
-                  <td className="px-6 py-4 font-mono text-xs text-accent">
-                    #{order._id.substring(order._id.length - 8).toUpperCase()}
-                  </td>
+                  <Tooltip title={order?._id}>
+                    <td className="px-6 py-4 font-mono text-xs text-accent">
+                      #
+                      {order?._id
+                        ?.substring(order?._id.length - 8)
+                        .toUpperCase()}
+                    </td>
+                  </Tooltip>
+
                   <td className="px-6 py-4">
                     <div className="font-bold text-white">
-                      {(order.user as any)?.name || "Guest"}
+                      {(order?.user as any)?.name || "Guest"}
                     </div>
                     <div className="text-xs text-text-muted">
-                      {(order.user as any)?.email}
+                      {(order?.user as any)?.email}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    {format(new Date(order.createdAt), "dd MMM yyyy")}
+                    {format(new Date(order?.createdAt), "dd MMM yyyy")}
                   </td>
                   <td className="px-6 py-4 font-bold text-accent">
-                    ${order.totalPrice.toFixed(2)}
+                    ₹{order?.totalPrice.toLocaleString("en-IN")}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${order.isPaid ? "bg-success/20 text-success border border-success/30" : "bg-error/20 text-error border border-error/30"}`}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${order?.isPaid ? "bg-success/20 text-success border border-success/30" : "bg-error/20 text-error border border-error/30"}`}
                     >
-                      {order.isPaid ? "PAID" : "UNPAID"}
+                      {order?.isPaid ? "PAID" : "UNPAID"}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <span
                         className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-tighter ${
-                          order.status === "Delivered"
+                          order?.status === "Delivered"
                             ? "bg-success text-background"
-                            : order.status === "Cancelled"
+                            : order?.status === "Cancelled"
                               ? "bg-error text-white"
-                              : order.status === "Returned"
+                              : order?.status === "Returned"
                                 ? "bg-gray-400 text-black"
-                                : order.status === "Shipped"
+                                : order?.status === "Shipped"
                                   ? "bg-indigo-500 text-white"
                                   : "bg-accent text-background"
                         }`}
                       >
-                        {order.status}
+                        {order?.status}
                       </span>
                       {hasPendingReturns(order) && (
                         <span
@@ -250,10 +257,10 @@ const OrderManagement: React.FC = () => {
                     Customer
                   </p>
                   <p className="text-sm text-white font-bold">
-                    {(selectedOrder.user as any)?.name}
+                    {(selectedOrder?.user as any)?.name}
                   </p>
                   <p className="text-xs text-text-secondary">
-                    {(selectedOrder.user as any)?.email}
+                    {(selectedOrder?.user as any)?.email}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -261,14 +268,14 @@ const OrderManagement: React.FC = () => {
                     Shipping Address
                   </p>
                   <p className="text-xs text-text-secondary">
-                    {selectedOrder.shippingAddress.addressLine1},{" "}
-                    {selectedOrder.shippingAddress.city}
+                    {selectedOrder?.shippingAddress?.addressLine1},{" "}
+                    {selectedOrder?.shippingAddress?.city}
                     <br />
-                    {selectedOrder.shippingAddress.state},{" "}
-                    {selectedOrder.shippingAddress.postalCode}
+                    {selectedOrder?.shippingAddress?.state},{" "}
+                    {selectedOrder?.shippingAddress?.postalCode}
                     <br />
                     <span className="font-bold text-white">
-                      Phone: {selectedOrder.shippingAddress.phone}
+                      Phone: {selectedOrder?.shippingAddress?.phone}
                     </span>
                   </p>
                 </div>
@@ -279,26 +286,26 @@ const OrderManagement: React.FC = () => {
                   Order Items
                 </h3>
                 <div className="space-y-4">
-                  {selectedOrder.items.map((item, idx) => (
+                  {selectedOrder?.items?.map((item, idx) => (
                     <div
                       key={idx}
                       className="bg-surface-light/30 p-4 rounded-xl border border-border/50"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-bold text-white">{item.name}</p>
+                          <p className="font-bold text-white">{item?.name}</p>
                           <p className="text-xs text-text-secondary">
-                            Qty: {item.quantity} | Size: {item.size || "N/A"} |
-                            Price: ${item.price}
+                            Qty: {item?.quantity} | Size: {item?.size || "N/A"}{" "}
+                            | Price: ₹{item?.price}
                           </p>
                         </div>
                         <p className="font-bold text-accent">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₹{(item?.price * item?.quantity).toFixed(2)}
                         </p>
                       </div>
 
                       {/* Item Return Handling */}
-                      {item.returnStatus === "Requested" && (
+                      {item?.returnStatus === "Requested" && (
                         <div className="mt-3 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
                           <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">
                             Return Requested
@@ -306,11 +313,11 @@ const OrderManagement: React.FC = () => {
                           <p className="text-xs text-white mb-3">
                             Reason:{" "}
                             <span className="font-bold">
-                              {item.returnReason}
+                              {item?.returnReason}
                             </span>
-                            {item.customReturnReason && (
+                            {item?.customReturnReason && (
                               <span className="block mt-1 italic text-text-muted">
-                                "{item.customReturnReason}"
+                                "{item?.customReturnReason}"
                               </span>
                             )}
                           </p>
@@ -330,8 +337,8 @@ const OrderManagement: React.FC = () => {
                             <button
                               onClick={() =>
                                 handleItemReturnAction(
-                                  selectedOrder._id,
-                                  item.product.toString(),
+                                  selectedOrder?._id,
+                                  item?.product?.toString(),
                                   "Rejected",
                                 )
                               }
@@ -342,13 +349,13 @@ const OrderManagement: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      {item.returnStatus &&
-                        item.returnStatus !== "None" &&
-                        item.returnStatus !== "Requested" && (
+                      {item?.returnStatus &&
+                        item?.returnStatus !== "None" &&
+                        item?.returnStatus !== "Requested" && (
                           <p
-                            className={`text-[10px] font-black uppercase mt-2 ${item.returnStatus === "Approved" ? "text-success" : "text-error"}`}
+                            className={`text-[10px] font-black uppercase mt-2 ${item?.returnStatus === "Approved" ? "text-success" : "text-error"}`}
                           >
-                            Return {item.returnStatus}
+                            Return {item?.returnStatus}
                           </p>
                         )}
                     </div>
@@ -362,27 +369,27 @@ const OrderManagement: React.FC = () => {
                   Update Order Status
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedOrder.status === "Processing" && (
+                  {selectedOrder?.status === "Processing" && (
                     <button
                       onClick={() =>
-                        handleStatusUpdate(selectedOrder._id, "Shipped")
+                        handleStatusUpdate(selectedOrder?._id, "Shipped")
                       }
                       className="bg-accent text-background px-6 py-2 rounded-xl text-xs font-black uppercase hover:opacity-90 transition-all"
                     >
                       Mark as Shipped
                     </button>
                   )}
-                  {selectedOrder.status === "Shipped" && (
+                  {selectedOrder?.status === "Shipped" && (
                     <button
                       onClick={() =>
-                        handleStatusUpdate(selectedOrder._id, "Delivered")
+                        handleStatusUpdate(selectedOrder?._id, "Delivered")
                       }
                       className="bg-success text-background px-6 py-2 rounded-xl text-xs font-black uppercase hover:opacity-90 transition-all"
                     >
                       Mark as Delivered
                     </button>
                   )}
-                  {selectedOrder.status === "Cancelled" && (
+                  {selectedOrder?.status === "Cancelled" && (
                     <div className="w-full p-4 bg-error/10 border border-error/20 rounded-xl">
                       <p className="text-error text-xs font-bold italic">
                         This order was cancelled by the user.

@@ -146,7 +146,7 @@ const ProductManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-white">
-                      ${product?.price}
+                      ₹{product?.price.toLocaleString("en-IN")}
                     </div>
                   </td>
                   <td className="px-6 py-4">
