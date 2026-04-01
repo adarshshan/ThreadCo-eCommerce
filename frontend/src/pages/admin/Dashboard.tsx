@@ -33,7 +33,7 @@ const Dashboard = () => {
       <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
       <Grid container spacing={3} mb={6}>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Paper
             elevation={0}
             className="p-6 !bg-surface-light border border-border rounded-xl"
@@ -49,7 +49,7 @@ const Dashboard = () => {
             </Typography>
           </Paper>
         </Grid>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Paper
             elevation={0}
             className="p-6 !bg-surface-light border border-border rounded-xl"
@@ -65,7 +65,7 @@ const Dashboard = () => {
             </Typography>
           </Paper>
         </Grid>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Paper
             elevation={0}
             className="p-6 !bg-surface-light border border-border rounded-xl"
@@ -81,7 +81,7 @@ const Dashboard = () => {
             </Typography>
           </Paper>
         </Grid>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Paper
             elevation={0}
             className="p-6 !bg-surface-light border border-border rounded-xl"
