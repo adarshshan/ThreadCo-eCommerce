@@ -6,6 +6,29 @@ const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 axios.defaults.withCredentials = true;
 
+// Add a request interceptor
+axios.interceptors.request.use(
+  (config) => {
+    // Get access token from zustand storage (localStorage)
+    const storage = localStorage.getItem("kids-own-storage");
+    if (storage) {
+      try {
+        const parsedStorage = JSON.parse(storage);
+        const accessToken = parsedStorage.state?.user?.token; // Assuming token is stored here
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+      } catch (e) {
+        console.error("Error parsing storage for auth token", e);
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Add a response interceptor
 axios.interceptors.response.use(
   (response) => response,
