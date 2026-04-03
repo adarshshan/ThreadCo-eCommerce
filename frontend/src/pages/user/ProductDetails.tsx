@@ -16,6 +16,7 @@ import Slider from "react-slick";
 import Loading from "../../components/Loading";
 import ProductCarousel from "../../components/ProductCarousel";
 import CustomButton from "../../components/CustomButton";
+import toast from "react-hot-toast";
 
 const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "3XL"];
 
@@ -26,6 +27,7 @@ const ProductDetails: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [sizeError, setSizeError] = useState(false);
   const addToCart = useStore((state) => state.addToCart);
+  const openAddToCartModal = useStore((state) => state.openAddToCartModal);
   const wishlist = useStore((state) => state.wishlist);
   const addToWishlist = useStore((state) => state.addToWishlist);
   const removeFromWishlist = useStore((state) => state.removeFromWishlist);
@@ -62,20 +64,42 @@ const ProductDetails: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    if (!selectedSize) {
+    if (product.hasSizes && !selectedSize) {
       setSizeError(true);
+      toast.error("Please select a size");
       return;
     }
+
+    // Stock check
+    if (product.hasSizes && selectedSize) {
+      const sizeObj = product.sizes?.find(s => s.size === selectedSize);
+      if (!sizeObj || sizeObj.stock <= 0) {
+        toast.error("Size is out of stock");
+        return;
+      }
+    } else if (product.stock !== undefined && product.stock <= 0) {
+      toast.error("Product is out of stock");
+      return;
+    }
+
     setSizeError(false);
-    addToCart(product, 1, selectedSize);
+    addToCart(product, 1, selectedSize ?? undefined);
+    openAddToCartModal(product, selectedSize);
+    toast.success("Added to cart!");
   };
 
   const toggleWishlist = async () => {
     if (!product) return;
-    if (isInWishlist) {
-      await removeFromWishlist(product?._id as string);
-    } else {
-      await addToWishlist(product);
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(product?._id as string);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(product);
+        toast.success("Added to wishlist!");
+      }
+    } catch (error) {
+      toast.error("Failed to update wishlist");
     }
   };
 

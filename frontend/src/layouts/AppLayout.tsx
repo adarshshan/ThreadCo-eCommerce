@@ -1,10 +1,15 @@
 import { Outlet } from "react-router-dom";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import AddToCartModal from "../components/AddToCartModal";
 import { useStore } from "../store/useStore";
 
 const AppLayout = () => {
   const hasHydrated = useStore((state) => state._hasHydrated);
+  const isAddToCartModalOpen = useStore((state) => state.isAddToCartModalOpen);
+  const lastAddedProduct = useStore((state) => state.lastAddedProduct);
+  const lastAddedSize = useStore((state) => state.lastAddedSize);
+  const closeAddToCartModal = useStore((state) => state.closeAddToCartModal);
 
   if (!hasHydrated) {
     return (
@@ -21,6 +26,13 @@ const AppLayout = () => {
         <Outlet />
       </main>
       <Footer />
+      
+      <AddToCartModal 
+        open={isAddToCartModalOpen}
+        onClose={closeAddToCartModal}
+        product={lastAddedProduct}
+        selectedSize={lastAddedSize}
+      />
     </div>
   );
 };
