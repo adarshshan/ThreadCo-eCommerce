@@ -260,6 +260,8 @@ export class UserController {
         .json({
           success: true,
           user,
+          accessToken: token,
+          refreshToken: refreshToken,
           message: "Authentication successful",
         });
     } catch (error) {

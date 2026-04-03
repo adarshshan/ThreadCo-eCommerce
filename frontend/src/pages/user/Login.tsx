@@ -23,6 +23,8 @@ const Login: React.FC = () => {
         );
         const userData = {
           ...response.user,
+          token: response.accessToken,
+          refreshToken: response.refreshToken,
         };
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
