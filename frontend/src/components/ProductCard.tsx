@@ -5,6 +5,7 @@ import { useStore } from "../store/useStore";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import toast from "react-hot-toast";
 
 interface ProductCardProps {
   product: Product;
@@ -13,6 +14,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
   const addToCart = useStore((state) => state.addToCart);
+  const openAddToCartModal = useStore((state) => state.openAddToCartModal);
   const wishlist = useStore((state) => state.wishlist);
   const addToWishlist = useStore((state) => state.addToWishlist);
   const removeFromWishlist = useStore((state) => state.removeFromWishlist);
@@ -25,16 +27,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isOutOfStock) return;
+    if (isOutOfStock) {
+      toast.error("Product is out of stock");
+      return;
+    }
+    
+    if (product.hasSizes) {
+      // If it has sizes, navigate to details to pick a size instead of adding random one
+      navigate(`/product/${product?._id}`);
+      toast("Please select a size", { icon: "📏" });
+      return;
+    }
+
     addToCart(product);
+    openAddToCartModal(product);
+    toast.success("Added to cart!");
   };
 
   const toggleWishlist = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isInWishlist) {
-      await removeFromWishlist(product._id as string);
-    } else {
-      await addToWishlist(product);
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(product._id as string);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(product);
+        toast.success("Added to wishlist!");
+      }
+    } catch (error) {
+      toast.error("Failed to update wishlist");
     }
   };
 

@@ -13,6 +13,12 @@ interface StoreState {
   closeModal: () => void;
   logout: () => void;
   
+  isAddToCartModalOpen: boolean;
+  lastAddedProduct: Product | null;
+  lastAddedSize: string | null;
+  openAddToCartModal: (product: Product, size?: string | null) => void;
+  closeAddToCartModal: () => void;
+  
   cart: CartItem[];
   addToCart: (product: Product, quantity?: number, size?: string, color?: string) => void;
   removeFromCart: (productId: string | number, size?: string, color?: string) => void;
@@ -44,6 +50,14 @@ export const useStore = create<StoreState>()(
         set({ user: null, cart: [], wishlist: [] });
         localStorage.removeItem("user");
       },
+
+      isAddToCartModalOpen: false,
+      lastAddedProduct: null,
+      lastAddedSize: null,
+      openAddToCartModal: (product, size = null) => 
+        set({ isAddToCartModalOpen: true, lastAddedProduct: product, lastAddedSize: size }),
+      closeAddToCartModal: () => 
+        set({ isAddToCartModalOpen: false, lastAddedProduct: null, lastAddedSize: null }),
 
       cart: [],
       addToCart: (product, quantity = 1, size, color) => {

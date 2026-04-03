@@ -109,8 +109,25 @@ const router = createBrowserRouter([
   },
 ]);
 
+import { Toaster } from "react-hot-toast";
+
 const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '12px',
+          },
+        }}
+      />
+      <RouterProvider router={router} />
+    </>
+  );
 };
 
 export default App;
