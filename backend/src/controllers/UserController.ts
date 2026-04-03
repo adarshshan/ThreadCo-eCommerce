@@ -17,21 +17,21 @@ export class UserController {
       const { email, password }: { email: string; password: string } = req.body;
       const loginStatus = await this.userService.userLogin(email, password); //This would return authResponse or throws error
 
-      const accessTokenMaxAge = 5 * 60 * 1000;
+      const accessTokenMaxAge = 30 * 60 * 1000;
       const refreshTokenMaxAge = 48 * 60 * 60 * 1000;
 
       res
         .status(loginStatus.status)
         .cookie("access_token", loginStatus.data.token, {
           maxAge: accessTokenMaxAge,
-          sameSite: "lax",
-          secure: false, // true in production
+          sameSite: "none",
+          secure: true,
           httpOnly: true,
         })
         .cookie("refresh_token", loginStatus.data.refreshToken, {
           maxAge: refreshTokenMaxAge,
-          sameSite: "lax",
-          secure: false, // true in production
+          sameSite: "none",
+          secure: true,
           httpOnly: true,
         })
         .json(loginStatus);
@@ -246,13 +246,13 @@ export class UserController {
       res
         .status(200)
         .cookie("access_token", token, {
-          httpOnly: false,
+          httpOnly: true,
           secure: true,
           maxAge: accessTokenMaxAge,
           sameSite: "none",
         })
         .cookie("refresh_token", refreshToken, {
-          httpOnly: false,
+          httpOnly: true,
           secure: true,
           maxAge: refreshTokenMaxAge,
           sameSite: "none",
