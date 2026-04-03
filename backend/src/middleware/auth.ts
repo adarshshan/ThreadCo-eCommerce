@@ -48,7 +48,7 @@ export const protect = async (
           maxAge: accessTokenMaxAge,
           sameSite: "none",
           secure: true,
-          httpOnly: false,
+          httpOnly: true,
         });
       } else {
         return res
