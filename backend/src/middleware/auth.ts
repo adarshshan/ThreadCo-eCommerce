@@ -23,11 +23,21 @@ export const protect = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log("Protect Middleware Hit");
+  console.log("All Cookies:", req.cookies);
+  console.log("Cookie header:", req.headers.cookie);
+
   let token = req.cookies.access_token;
   let refresh_token = req.cookies.refresh_token;
 
-  if (!refresh_token) {
-    console.log("its hitting here !refresh_token");
+  // Fallback to Authorization header if cookies are missing (common in some cross-domain setups)
+  if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+    token = req.headers.authorization.split(" ")[1];
+    console.log("DEBUG: Using token from Authorization header");
+  }
+
+  if (!refresh_token && !token) {
+    console.log("DEBUG: Both refresh token and access token are missing");
     return res.status(401).json({
       success: false,
       message: "Not authorized, please login again.",

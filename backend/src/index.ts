@@ -16,6 +16,8 @@ import { searchRoutes } from "./routes/SearchRoutes";
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
+app.set("trust proxy", 1);
+
 app.use(
   cors({
     origin: true,
