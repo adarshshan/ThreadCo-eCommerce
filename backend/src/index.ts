@@ -21,8 +21,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      // "http://127.0.0.1:5173",
       "http://172.26.58.12:5173",
+      "https://vendore-ecommerce-25oft3ddx-adarshshans-projects.vercel.app/",
     ],
     credentials: true,
     // methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -37,6 +37,10 @@ app.use(cookieParser());
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   next();
+});
+
+app.get("/health-check", (req, res) => {
+  res.send("The application is running on port 3000");
 });
 
 // Set up REST Routes
