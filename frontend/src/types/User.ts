@@ -5,4 +5,6 @@ export interface User {
   password?: string;
   role?: "user" | "admin";
   status?: "active" | "blocked";
+  token?: string;
+  refreshToken?: string;
 }
