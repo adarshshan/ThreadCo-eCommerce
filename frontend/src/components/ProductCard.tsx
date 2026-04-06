@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { type Product } from "../types/Product";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
@@ -23,9 +23,13 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
   const addToWishlist = useStore((state) => state.addToWishlist);
   const removeFromWishlist = useStore((state) => state.removeFromWishlist);
 
-  const isOutOfStock = product?.hasSizes
-    ? (product.sizes?.reduce((acc, s) => acc + s.stock, 0) ?? 0) <= 0
-    : (product?.stock ?? 0) <= 0;
+  const isOutOfStock = useMemo(
+    () =>
+      product?.hasSizes
+        ? (product.sizes?.reduce((acc, s) => acc + s.stock, 0) ?? 0) <= 0
+        : (product?.stock ?? 0) <= 0,
+    [product?.stock],
+  );
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();

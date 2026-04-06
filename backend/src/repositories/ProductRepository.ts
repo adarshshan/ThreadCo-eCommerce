@@ -12,13 +12,18 @@ export interface ProductFilters {
 }
 
 export interface IProductRepository {
-  findAll(filters?: ProductFilters): Promise<{ products: ProductDocument[]; totalItems: number }>;
+  findAll(
+    filters?: ProductFilters,
+  ): Promise<{ products: ProductDocument[]; totalItems: number }>;
   findById(id: string): Promise<ProductDocument | null>;
-  findRelatedProducts(productId: string, limit?: number): Promise<ProductDocument[]>;
+  findRelatedProducts(
+    productId: string,
+    limit?: number,
+  ): Promise<ProductDocument[]>;
   create(product: Omit<ProductDocument, "_id">): Promise<ProductDocument>;
   update(
     id: string,
-    product: Partial<ProductDocument>
+    product: Partial<ProductDocument>,
   ): Promise<ProductDocument | null>;
   delete(id: string): Promise<boolean>;
   countAll(filters?: ProductFilters): Promise<number>;
@@ -30,8 +35,13 @@ export class ProductRepository implements IProductRepository {
     connectToDatabase();
   }
 
-  async findRelatedProducts(productId: string, limit: number = 10): Promise<ProductDocument[]> {
-    const product = await ProductModel.findById(productId).select("category").lean();
+  async findRelatedProducts(
+    productId: string,
+    limit: number = 10,
+  ): Promise<ProductDocument[]> {
+    const product = await ProductModel.findById(productId)
+      .select("category")
+      .lean();
     if (!product) return [];
 
     return (await ProductModel.find({
@@ -41,7 +51,7 @@ export class ProductRepository implements IProductRepository {
     })
       .limit(limit)
       .populate("category", "name")
-      .select("name price images category")
+      .select("name price images category stock hasSizes sizes")
       .lean()
       .exec()) as unknown as ProductDocument[];
   }
@@ -60,7 +70,9 @@ export class ProductRepository implements IProductRepository {
     return await ProductModel.countDocuments(query);
   }
 
-  async findAll(filters: ProductFilters = {}): Promise<{ products: ProductDocument[]; totalItems: number }> {
+  async findAll(
+    filters: ProductFilters = {},
+  ): Promise<{ products: ProductDocument[]; totalItems: number }> {
     const query: any = { isActive: true };
 
     if (filters.category) query.category = filters.category;
@@ -74,14 +86,20 @@ export class ProductRepository implements IProductRepository {
     let sortOption: any = { createdAt: -1 };
     if (filters.sort) {
       switch (filters.sort) {
-        case "price_asc": sortOption = { price: 1 }; break;
-        case "price_desc": sortOption = { price: -1 }; break;
-        case "newest": sortOption = { createdAt: -1 }; break;
+        case "price_asc":
+          sortOption = { price: 1 };
+          break;
+        case "price_desc":
+          sortOption = { price: -1 };
+          break;
+        case "newest":
+          sortOption = { createdAt: -1 };
+          break;
       }
     }
 
     const totalItems = await ProductModel.countDocuments(query);
-    
+
     const findQuery = ProductModel.find(query)
       .populate("category", "name")
       .select("name price images category stock hasSizes sizes")
@@ -105,7 +123,10 @@ export class ProductRepository implements IProductRepository {
         .lean()
         .exec()) as unknown as ProductDocument | null;
     } catch (error) {
-      if (error instanceof Error && error.message.includes("Cast to ObjectId failed")) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Cast to ObjectId failed")
+      ) {
         return null;
       }
       throw error;
@@ -120,13 +141,13 @@ export class ProductRepository implements IProductRepository {
 
   async update(
     id: string,
-    productData: Partial<ProductDocument>
+    productData: Partial<ProductDocument>,
   ): Promise<ProductDocument | null> {
     try {
       return (await ProductModel.findByIdAndUpdate(
         id,
         { $set: productData },
-        { new: true }
+        { new: true },
       )
         .populate("category")
         .exec()) as ProductDocument | null;

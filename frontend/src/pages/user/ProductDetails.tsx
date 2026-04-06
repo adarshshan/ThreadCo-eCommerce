@@ -306,7 +306,7 @@ const ProductDetails: React.FC = () => {
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
                 <CustomButton
                   onclick={handleAddToCart}
-                  className="bg-surface btn-accent btn-lg flex-grow flex items-center justify-center gap-3 py-2 rounded-md cursor-pointer"
+                  className="bg-surface btn-accent btn-lg flex-grow flex items-center justify-center gap-3 py-2 rounded-md cursor-pointer !text-text-primary"
                 >
                   <ShoppingCartIcon />
                   Add to Cart
@@ -337,7 +337,7 @@ const ProductDetails: React.FC = () => {
                 <div className="flex flex-col items-center text-center space-y-2">
                   <HistoryIcon className="text-accent" />
                   <span className="text-xs font-bold text-text-primary uppercase tracking-tighter">
-                    14-Day Returns
+                    5-Day Returns
                   </span>
                 </div>
               </div>

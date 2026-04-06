@@ -130,7 +130,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
           <div className="text-sm font-bold tracking-widest text-text-secondary uppercase">
             <span className="text-accent text-lg">{currentIndex}</span>
             <span className="mx-2 text-border">/</span>
-            <span>{products.length}</span>
+            <span>{products?.length}</span>
           </div>
 
           {/* Progress Bar Style Indicator */}
