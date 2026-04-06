@@ -98,7 +98,7 @@ const shippingAddressSchema = new Schema<ShippingAddress>(
 
 const orderSchema = new Schema<OrderDocument>(
   {
-    user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    user: { type: Schema.Types.ObjectId, required: true, ref: "User", index: true },
     items: [orderItemSchema],
     shippingAddress: shippingAddressSchema,
     paymentMethod: { type: String, required: true, default: "Razorpay" },
@@ -112,13 +112,14 @@ const orderSchema = new Schema<OrderDocument>(
     taxPrice: { type: Number, required: true, default: 0.0 },
     shippingPrice: { type: Number, required: true, default: 0.0 },
     totalPrice: { type: Number, required: true, default: 0.0 },
-    isPaid: { type: Boolean, required: true, default: false },
+    isPaid: { type: Boolean, required: true, default: false, index: true },
     paidAt: { type: Date },
     isDelivered: { type: Boolean, required: true, default: false },
     deliveredAt: { type: Date },
     status: {
       type: String,
       required: true,
+      index: true,
       enum: [
         "Pending",
         "Processing",

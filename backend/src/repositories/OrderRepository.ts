@@ -58,7 +58,10 @@ export class OrderRepository implements IOrderRepository {
   }
 
   async findByUser(userId: string): Promise<OrderDocument[]> {
-    return await OrderModel.find({ user: userId }).sort({ createdAt: -1 });
+    return await OrderModel.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .select("totalPrice status createdAt items.image items.name")
+      .lean();
   }
 
   async findByIdWithPopulate(
@@ -66,7 +69,7 @@ export class OrderRepository implements IOrderRepository {
     populate: string,
   ): Promise<OrderDocument | null> {
     try {
-      return await OrderModel.findById(id).populate(populate).exec();
+      return await OrderModel.findById(id).populate(populate).lean().exec() as any;
     } catch (error) {
       if (
         error instanceof Error &&
@@ -80,7 +83,7 @@ export class OrderRepository implements IOrderRepository {
   }
 
   async countAll(): Promise<number> {
-    return await OrderModel.countDocuments({});
+    return await OrderModel.countDocuments({}).lean();
   }
 
   async findByUserWithPagination(
@@ -93,7 +96,9 @@ export class OrderRepository implements IOrderRepository {
       .sort({ createdAt: -1 })
       .limit(pageSize)
       .skip(pageSize * (page - 1))
-      .exec();
+      .select("totalPrice status createdAt items.image items.name")
+      .lean()
+      .exec() as any;
     return { orders, totalItems };
   }
 
@@ -103,11 +108,12 @@ export class OrderRepository implements IOrderRepository {
   ): Promise<{ orders: OrderDocument[]; totalItems: number }> {
     const totalItems = await OrderModel.countDocuments({});
     const orders = await OrderModel.find({})
-      .populate("user", "id name")
+      .populate("user", "name email")
       .sort({ createdAt: -1 })
       .limit(pageSize)
       .skip(pageSize * (page - 1))
-      .exec();
+      .lean()
+      .exec() as any;
     return { orders, totalItems };
   }
 

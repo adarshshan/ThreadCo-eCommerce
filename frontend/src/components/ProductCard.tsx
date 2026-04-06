@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { type Product } from "../types/Product";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
@@ -11,19 +11,25 @@ interface ProductCardProps {
   product: Product;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
   const navigate = useNavigate();
+
+  // Granular selectors for performance
   const addToCart = useStore((state) => state.addToCart);
   const openAddToCartModal = useStore((state) => state.openAddToCartModal);
-  const wishlist = useStore((state) => state.wishlist);
+  const isInWishlist = useStore((state) =>
+    state?.wishlist?.some((item) => item?._id === product?._id),
+  );
   const addToWishlist = useStore((state) => state.addToWishlist);
   const removeFromWishlist = useStore((state) => state.removeFromWishlist);
 
-  const isInWishlist = wishlist.some((item) => item._id === product._id);
-
-  const isOutOfStock = product?.hasSizes
-    ? (product.sizes?.reduce((acc, s) => acc + s.stock, 0) ?? 0) <= 0
-    : (product?.stock ?? 0) <= 0;
+  const isOutOfStock = useMemo(
+    () =>
+      product?.hasSizes
+        ? (product.sizes?.reduce((acc, s) => acc + s.stock, 0) ?? 0) <= 0
+        : (product?.stock ?? 0) <= 0,
+    [product?.stock],
+  );
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,8 +38,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       return;
     }
 
-    if (product.hasSizes) {
-      // If it has sizes, navigate to details to pick a size instead of adding random one
+    if (product?.hasSizes) {
       navigate(`/product/${product?._id}`);
       toast("Please select a size", { icon: "📏" });
       return;
@@ -48,7 +53,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
     try {
       if (isInWishlist) {
-        await removeFromWishlist(product._id as string);
+        await removeFromWishlist(product?._id as string);
         toast.success("Removed from wishlist");
       } else {
         await addToWishlist(product);
@@ -68,6 +73,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <img
           src={product?.images?.[0] as string}
           alt={product?.name}
+          loading="lazy"
           className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${isOutOfStock ? "grayscale" : ""}`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
@@ -126,6 +132,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
     </div>
   );
-};
+});
 
 export default ProductCard;
