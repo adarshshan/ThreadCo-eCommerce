@@ -23,7 +23,7 @@ const CustomButton: React.FC<CustomButtonInterface> = ({
       onClick={onclick}
       className={cn(
         "bg-[var(--color-accent)] btn-accent w-full py-4 text-lg font-bold shadow-xl border rounded-md cursor-pointer",
-        "border-[var(--color-border)] text-text-primary",
+        "border-[var(--color-border)] !text-[#ffffff]",
         "sm:opacity-80 hover:opacity-95 hover:border-[var(--color-border-light)]",
         disabled && "opacity-50 cursor-not-allowed",
         className,

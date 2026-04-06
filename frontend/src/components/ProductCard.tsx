@@ -13,12 +13,12 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
   const navigate = useNavigate();
-  
+
   // Granular selectors for performance
   const addToCart = useStore((state) => state.addToCart);
   const openAddToCartModal = useStore((state) => state.openAddToCartModal);
-  const isInWishlist = useStore((state) => 
-    state.wishlist.some((item) => item._id === product._id)
+  const isInWishlist = useStore((state) =>
+    state?.wishlist?.some((item) => item?._id === product?._id),
   );
   const addToWishlist = useStore((state) => state.addToWishlist);
   const removeFromWishlist = useStore((state) => state.removeFromWishlist);
@@ -34,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
       return;
     }
 
-    if (product.hasSizes) {
+    if (product?.hasSizes) {
       navigate(`/product/${product?._id}`);
       toast("Please select a size", { icon: "📏" });
       return;
@@ -49,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
     e.stopPropagation();
     try {
       if (isInWishlist) {
-        await removeFromWishlist(product._id as string);
+        await removeFromWishlist(product?._id as string);
         toast.success("Removed from wishlist");
       } else {
         await addToWishlist(product);
