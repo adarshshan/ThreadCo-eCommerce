@@ -12,8 +12,6 @@ export class OrderService {
     private orderRepository: IOrderRepository,
     private productRepository: IProductRepository,
   ) {
-    console.log('razorpay..........')
-    console.log(process.env.RAZORPAY_KEY_ID)
     this.razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID as string,
       key_secret: process.env.RAZORPAY_KEY_SECRET as string,
@@ -165,10 +163,18 @@ export class OrderService {
     return createdOrder;
   }
 
-  async getMyOrders(userId: string, pageNumber: number = 1, limit: number = 10) {
+  async getMyOrders(
+    userId: string,
+    pageNumber: number = 1,
+    limit: number = 10,
+  ) {
     const page = pageNumber || 1;
     const pageSize = limit || 10;
-    return await this.orderRepository.findByUserWithPagination(userId, page, pageSize);
+    return await this.orderRepository.findByUserWithPagination(
+      userId,
+      page,
+      pageSize,
+    );
   }
 
   async getOrderById(orderId: string) {
@@ -231,7 +237,7 @@ export class OrderService {
 
     // Restore stock
     for (const item of order?.items) {
-      if (item.size) {
+      if (item?.size) {
         const product = await this.productRepository.findById(
           String(item?.product),
         );
@@ -313,12 +319,15 @@ export class OrderService {
     const pageSize = limit || 10;
     const page = pageNumber || 1;
 
-    const { orders, totalItems } = await this.orderRepository.findAllWithPagination(
-      page,
-      pageSize,
-    );
+    const { orders, totalItems } =
+      await this.orderRepository.findAllWithPagination(page, pageSize);
 
-    return { orders, page, totalItems, totalPages: Math.ceil(totalItems / pageSize) };
+    return {
+      orders,
+      page,
+      totalItems,
+      totalPages: Math.ceil(totalItems / pageSize),
+    };
   }
 
   async updateOrderStatus(orderId: string, status: any) {
