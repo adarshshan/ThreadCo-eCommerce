@@ -401,3 +401,11 @@ export const getSearchSuggestions = async (
   );
   return response.data;
 };
+
+// Shipping API
+export const validatePincode = async (pincode: string) => {
+  const response = await axios.post(`${VITE_API_URL}/shipping/validate-pincode`, {
+    pincode,
+  });
+  return response.data;
+};

@@ -18,4 +18,4 @@ router.put("/product/:id/quantity", protect, seller, (req, res) => sellerControl
 router.get("/orders", protect, seller, (req, res) => sellerController.getOrders(req, res));
 router.put("/order/:id/book", protect, seller, (req, res) => sellerController.bookOrder(req, res));
 
-export default router;
+export {router as sellerRoutes};
