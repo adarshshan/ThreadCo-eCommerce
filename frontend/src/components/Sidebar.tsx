@@ -8,6 +8,7 @@ const Sidebar: React.FC = () => {
   const menuItems = [
     { label: "Dashboard", path: "/admin" },
     { label: "Products", path: "/admin/product-management" },
+    { label: "Sellers", path: "/admin/seller-management" },
     { label: "Customers", path: "/admin/user-management" },
     { label: "Orders", path: "/admin/order-management" },
     { label: "Categories", path: "/admin/category-management" },

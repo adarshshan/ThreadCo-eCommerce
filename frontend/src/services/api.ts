@@ -183,6 +183,27 @@ export const unblockUser = async (id: string): Promise<User> => {
   return response.data;
 };
 
+// Seller management
+export const getSellers = async (): Promise<{ success: boolean; sellers: User[] }> => {
+  const response = await axios.get(`${VITE_API_URL}/admin/sellers`);
+  return response.data;
+};
+
+export const createSeller = async (sellerData: any): Promise<{ success: boolean; message: string; seller: User }> => {
+  const response = await axios.post(`${VITE_API_URL}/admin/seller/create`, sellerData);
+  return response.data;
+};
+
+export const blockSeller = async (id: string): Promise<{ success: boolean; message: string; seller: User }> => {
+  const response = await axios.put(`${VITE_API_URL}/admin/seller/${id}/block`);
+  return response.data;
+};
+
+export const unblockSeller = async (id: string): Promise<{ success: boolean; message: string; seller: User }> => {
+  const response = await axios.put(`${VITE_API_URL}/admin/seller/${id}/unblock`);
+  return response.data;
+};
+
 export const googleAuth = async (
   credential: string,
   client_id: string,
