@@ -38,18 +38,23 @@ export class ShippingController {
       // 2. DTDC Serviceability & Estimation Logic
       // For this implementation, we assume DTDC serves all valid Indian PIN codes
       // But we calculate delivery days based on distance (Same State vs Other)
-      
+
       const destinationState = data.PostOffice[0].State;
       const destinationCity = data.PostOffice[0].District;
 
       let estimatedDays = 5; // Default (Far states)
-      
+
       if (destinationState === ORIGIN_STATE) {
         estimatedDays = 2; // Same state
       } else if (
-        ["Tamil Nadu", "Kerala", "Andhra Pradesh", "Telangana", "Goa", "Maharashtra"].includes(
-          destinationState,
-        )
+        [
+          "Tamil Nadu",
+          "Kerala",
+          "Andhra Pradesh",
+          "Telangana",
+          "Goa",
+          "Maharashtra",
+        ].includes(destinationState)
       ) {
         estimatedDays = 3; // Nearby states
       }

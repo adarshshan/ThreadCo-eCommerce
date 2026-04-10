@@ -61,6 +61,7 @@ const Checkout = () => {
         try {
           setPincodeStatus((prev) => ({ ...prev, loading: true, message: "" }));
           const data = await validatePincode(shippingAddress.postalCode);
+
           if (data.success) {
             setPincodeStatus({
               loading: false,
@@ -174,8 +175,8 @@ const Checkout = () => {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: orderData.amount * 100,
       currency: orderData.currency,
-      name: "VENDORA",
-      description: "Secure Purchase from VENDORA",
+      name: "ThreadCo",
+      description: "Secure Purchase from ThreadCo",
       order_id: orderData.orderId,
       handler: async (response: any) => {
         try {
