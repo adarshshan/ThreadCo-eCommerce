@@ -71,7 +71,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
     >
       <div className="relative overflow-hidden aspect-[3/4]">
         <img
-          src={product?.images?.[0] as string}
+          src={product?.images?.[0]?.url}
           alt={product?.name}
           loading="lazy"
           className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${isOutOfStock ? "grayscale" : ""}`}

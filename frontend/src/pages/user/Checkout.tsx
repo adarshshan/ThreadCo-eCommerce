@@ -46,9 +46,6 @@ const Checkout = () => {
     valid: boolean | null;
     message: string;
     estimatedDelivery?: string;
-    deliveryCharge?: number;
-    deliveryType?: string;
-    totalWeight?: number;
   }>({
     loading: false,
     valid: null,
@@ -63,10 +60,7 @@ const Checkout = () => {
       const timer = setTimeout(async () => {
         try {
           setPincodeStatus((prev) => ({ ...prev, loading: true, message: "" }));
-          const data = await validatePincode(
-            shippingAddress.postalCode,
-            cart.map((item) => ({ productId: item._id, quantity: item.quantity })),
-          );
+          const data = await validatePincode(shippingAddress.postalCode);
 
           if (data.success) {
             setPincodeStatus({
@@ -74,16 +68,12 @@ const Checkout = () => {
               valid: true,
               message: `Serviceable in ${data.city}, ${data.state}`,
               estimatedDelivery: data.estimatedDeliveryDate,
-              deliveryCharge: data.deliveryCharge,
-              deliveryType: data.deliveryType,
-              totalWeight: data.totalWeight,
             });
-            // Auto-fill city, state, and country
+            // Auto-fill city and state if they are empty
             setShippingAddress((prev) => ({
               ...prev,
-              city: data.city,
-              state: data.state,
-              country: data.country || "India",
+              city: prev.city || data.city,
+              state: prev.state || data.state,
             }));
           }
         } catch (error: any) {
@@ -141,7 +131,6 @@ const Checkout = () => {
           quantity: item.quantity,
           size: item.selectedSize,
         })),
-        shippingAddress.postalCode,
       );
       setOrderData(data);
       setStep(2);
@@ -201,27 +190,29 @@ const Checkout = () => {
           if (verificationResult?.success) {
             const newOrder = await createOrder({
               orderItems: cart?.map((item) => ({
-                product: item._id,
-                name: item.name,
+                product: item?._id,
+                name: item?.name,
                 image:
-                  item.images && item.images.length > 0 ? item.images[0] : "",
-                price: item.price,
-                quantity: item.quantity,
-                size: item.selectedSize,
-                color: item.selectedColor,
+                  item?.images && item?.images?.length > 0
+                    ? item?.images[0]?.url
+                    : "",
+                price: item?.price,
+                quantity: item?.quantity,
+                size: item?.selectedSize,
+                color: item?.selectedColor,
               })),
               shippingAddress,
-              estimatedDeliveryDate: pincodeStatus.estimatedDelivery,
+              estimatedDeliveryDate: pincodeStatus?.estimatedDelivery,
               paymentMethod: "Razorpay",
               itemsPrice: cart?.reduce(
-                (acc, item) => acc + item.price * item.quantity,
+                (acc, item) => acc + item?.price * item?.quantity,
                 0,
               ),
               // taxPrice: orderData.tax,
-              shippingPrice: orderData.shipping,
-              totalPrice: orderData.amount,
+              shippingPrice: orderData?.shipping,
+              totalPrice: orderData?.amount,
               paymentResult: {
-                id: response.razorpay_payment_id,
+                id: response?.razorpay_payment_id,
                 status: "succeeded",
                 update_time: new Date().toISOString(),
                 email_address: user?.email,
@@ -559,26 +550,26 @@ const Checkout = () => {
                 <div className="space-y-4 mb-8 max-h-[40vh] overflow-y-auto pr-2 scrollbar-thin">
                   {cart.map((item) => (
                     <div
-                      key={`${item._id}-${item.selectedSize}`}
+                      key={`${item?._id}-${item?.selectedSize}`}
                       className="flex gap-4 items-center"
                     >
                       <div className="w-12 h-12 rounded bg-surface-light overflow-hidden flex-shrink-0">
                         <img
-                          src={item.images?.[0]}
-                          alt=""
+                          src={item?.images?.[0]?.url}
+                          alt={item?.images?.[0]?.url}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-grow min-w-0">
                         <p className="text-sm font-bold text-text-primary truncate">
-                          {item.name}
+                          {item?.name}
                         </p>
                         <p className="text-xs text-text-muted">
                           Qty: {item.quantity} • {item.selectedSize}
                         </p>
                       </div>
                       <p className="text-sm font-bold text-text-primary">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹{(item?.price * item?.quantity)?.toFixed(2)}
                       </p>
                     </div>
                   ))}
@@ -591,26 +582,19 @@ const Checkout = () => {
                       ₹
                       {cart
                         .reduce(
-                          (acc, item) => acc + item.price * item.quantity,
+                          (acc, item) => acc + item?.price * item?.quantity,
                           0,
                         )
                         .toFixed(2)}
                     </span>
                   </div>
-                  {pincodeStatus.valid && (
-                    <>
-                      <div className="flex justify-between text-sm text-text-secondary">
-                        <div className="flex flex-col">
-                          <span>Shipping ({pincodeStatus.deliveryType})</span>
-                          <span className="text-[10px] text-text-muted">
-                            Total Weight: {(pincodeStatus.totalWeight! / 1000).toFixed(2)}kg
-                          </span>
-                        </div>
-                        <span className="text-success font-mono font-bold">
-                          {pincodeStatus.deliveryCharge === 0 ? "FREE" : `₹${pincodeStatus.deliveryCharge?.toFixed(2)}`}
-                        </span>
-                      </div>
-                    </>
+                  {orderData && (
+                    <div className="flex justify-between text-sm text-text-secondary">
+                      <span>Shipping</span>
+                      <span className="text-success font-mono font-bold">
+                        ₹{orderData?.shipping?.toFixed(2)}
+                      </span>
+                    </div>
                   )}
                 </div>
 
@@ -622,8 +606,11 @@ const Checkout = () => {
                     <span className="text-2xl font-black text-accent font-mono">
                       ₹
                       {(
-                        (orderData?.amount) ||
-                        (cart.reduce((acc, item) => acc + item.price * item.quantity, 0) + (pincodeStatus.deliveryCharge || 0))
+                        orderData?.amount ||
+                        cart.reduce(
+                          (acc, item) => acc + item?.price * item?.quantity,
+                          0,
+                        )
                       ).toFixed(2)}
                     </span>
                   </div>

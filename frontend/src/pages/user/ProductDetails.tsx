@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { useQuery } from "@tanstack/react-query";
-import type { Product } from "../../types/Product";
+import type { Product, ProductImage } from "../../types/Product";
 import { getProductsById, getRelatedProducts } from "../../services/api";
 import { useStore } from "../../store/useStore";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -58,7 +58,7 @@ const ProductDetails: React.FC = () => {
 
   useEffect(() => {
     if (product?.images?.[0]) {
-      setSelectedImage(product?.images[0]);
+      setSelectedImage(product?.images[0]?.url);
     }
   }, [product]);
 
@@ -167,15 +167,15 @@ const ProductDetails: React.FC = () => {
                 {product?.images?.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImage(image)}
+                    onClick={() => setSelectedImage(image?.url)}
                     className={`relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                      selectedImage === image
+                      selectedImage === image?.url
                         ? "border-accent scale-95 shadow-[0_0_15px_rgba(56,189,248,0.4)]"
                         : "border-border hover:border-border-light"
                     }`}
                   >
                     <img
-                      src={image}
+                      src={image?.url}
                       alt={`${product?.name} thumb ${index}`}
                       className="w-full h-full object-cover"
                     />
@@ -368,7 +368,7 @@ const ProductDetails: React.FC = () => {
 export default ProductDetails;
 
 interface ImageSliderInterface {
-  images: string[] | undefined;
+  images: ProductImage[] | undefined;
 }
 const ImageSlider: React.FC<ImageSliderInterface> = ({ images }) => {
   var settings = {
@@ -386,8 +386,8 @@ const ImageSlider: React.FC<ImageSliderInterface> = ({ images }) => {
           <Zoom key={index}>
             <div className="w-full aspect-square flex items-center justify-center bg-surface-light">
               <img
-                src={item}
-                alt={item}
+                src={item?.url}
+                alt={item?.url}
                 className="w-full h-full object-cover"
               />
             </div>

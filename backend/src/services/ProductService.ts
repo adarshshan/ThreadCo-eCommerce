@@ -1,5 +1,6 @@
-import { ProductDocument } from "../models/productsSchema";
+import { ProductDocument, ProductImage } from "../models/productsSchema";
 import { IProductRepository, ProductFilters } from "../repositories/ProductRepository";
+import { deleteImage, deleteMultipleImages } from "../utils/cloudinary";
 
 export class ProductService {
   constructor(private productRepository: IProductRepository) {}
@@ -29,10 +30,36 @@ export class ProductService {
     id: string,
     productData: Partial<ProductDocument>
   ): Promise<ProductDocument | null> {
+    // If images are being updated, find and delete removed images from Cloudinary
+    if (productData.images) {
+      const oldProduct = await this.productRepository.findById(id);
+      if (oldProduct && oldProduct.images) {
+        const oldImagePublicIds = oldProduct.images.map((img: ProductImage) => img.public_id);
+        const newImagePublicIds = productData.images.map((img: ProductImage) => img.public_id);
+        
+        const removedImagePublicIds = oldImagePublicIds.filter(
+          (id: string) => !newImagePublicIds.includes(id)
+        );
+
+        if (removedImagePublicIds.length > 0) {
+          await deleteMultipleImages(removedImagePublicIds);
+        }
+      }
+    }
+
     return this.productRepository.update(id, productData);
   }
 
   async deleteProduct(id: string): Promise<boolean> {
+    const product = await this.productRepository.findById(id);
+    if (!product) return false;
+
+    // Delete all images from Cloudinary
+    if (product.images && product.images.length > 0) {
+      const public_ids = product.images.map((img: ProductImage) => img.public_id);
+      await deleteMultipleImages(public_ids);
+    }
+
     return this.productRepository.delete(id);
   }
 }
