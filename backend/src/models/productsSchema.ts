@@ -11,6 +11,11 @@ export interface ProductVariant {
   stock: number;
 }
 
+export interface ProductImage {
+  url: string;
+  public_id: string;
+}
+
 export interface ProductDocument extends Document {
   name: string;
   brand?: string;
@@ -21,7 +26,7 @@ export interface ProductDocument extends Document {
   category: Types.ObjectId | string;
   subCategory?: string;
   sizes: ProductSize[];
-  images: string[];
+  images: ProductImage[];
   variants: ProductVariant[];
   tags?: string[];
   isFeatured: boolean;
@@ -41,6 +46,11 @@ const variantSchema = new Schema<ProductVariant>({
   stock: { type: Number, required: true, min: 0 },
 }, { _id: false });
 
+const productImageSchema = new Schema<ProductImage>({
+  url: { type: String, required: true },
+  public_id: { type: String, required: true },
+}, { _id: false });
+
 const productSchema = new Schema<ProductDocument>(
   {
     name: { type: String, required: true, trim: true },
@@ -52,7 +62,7 @@ const productSchema = new Schema<ProductDocument>(
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
     subCategory: { type: String, trim: true },
     sizes: { type: [sizeSchema], default: [] },
-    images: { type: [String], default: [] },
+    images: { type: [productImageSchema], default: [] },
     variants: [variantSchema],
     tags: { type: [String], index: true },
     isFeatured: { type: Boolean, default: false },

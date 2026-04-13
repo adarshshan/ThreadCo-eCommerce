@@ -23,12 +23,12 @@ interface CartItemProps {
 const CartItem: React.FC<CartItemProps> = React.memo(
   ({ item, removeFromCart, updateQuantity }) => {
     return (
-      <div className="card bg-surface p-4 sm:p-6 flex flex-col sm:row gap-6 items-start sm:items-center group hover:border-border-light transition-all">
+      <div className="card bg-surface p-4 sm:p-6 flex flex-col sm:flex-row sm:row gap-6 items-start sm:items-center group hover:border-border-light transition-all">
         {/* Product Image */}
-        <div className="w-full sm:w-24 h-32 sm:h-24 flex-shrink-0 bg-surface-light rounded-lg overflow-hidden">
+        <div className="w-full sm:w-32 h-32 sm:h-36 flex-shrink-0 bg-surface-light rounded-lg overflow-hidden">
           {item?.images && item?.images?.length > 0 ? (
             <img
-              src={item?.images[0]}
+              src={item?.images[0]?.url}
               alt={item?.name}
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

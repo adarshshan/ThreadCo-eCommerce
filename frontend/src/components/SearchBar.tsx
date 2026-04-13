@@ -135,7 +135,7 @@ const SearchBar: React.FC = () => {
                       className="flex items-center gap-3 p-2 hover:bg-surface-hover rounded-lg cursor-pointer transition-colors"
                     >
                       <img
-                        src={product?.images?.[0]}
+                        src={product?.images?.[0]?.url}
                         alt={product?.name}
                         className="w-10 h-10 object-cover rounded-md"
                       />

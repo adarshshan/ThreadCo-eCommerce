@@ -68,7 +68,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
         <div className="flex gap-4 mb-8">
           <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 border border-border">
             <img
-              src={product?.images?.[0]}
+              src={product?.images?.[0]?.url}
               alt={product?.name}
               className="w-full h-full object-cover"
             />

@@ -13,7 +13,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import type { Product, ProductSize } from "../types/Product";
+import type { Product, ProductSize, ProductImage } from "../types/Product";
 import { getCategories, getSellers } from "../services/api";
 
 const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "3XL"];
@@ -40,9 +40,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [weight, setWeight] = useState<number>(500);
   const [hasSizes, setHasSizes] = useState<boolean>(false);
   const [selectedSizes, setSelectedSizes] = useState<ProductSize[]>([]);
-  const [images, setImages] = useState<(File | string | null | undefined)[]>(
-    [],
-  );
+  const [images, setImages] = useState<
+    (File | ProductImage | null | undefined)[]
+  >([]);
   const [picMessage, setPicMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,13 +66,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setName(product.name);
       setPrice(product.price);
       setDescription(product?.description ?? "");
-      
-      const categoryId = typeof product?.category === "object" ? (product.category as any)?._id : (product?.category ?? "");
+
+      const categoryId =
+        typeof product?.category === "object"
+          ? (product.category as any)?._id
+          : (product?.category ?? "");
       setCategory(categoryId);
 
-      const sellerIdStr = typeof product?.sellerId === "object" ? (product.sellerId as any)?._id : (product?.sellerId ?? "");
+      const sellerIdStr =
+        typeof product?.sellerId === "object"
+          ? (product.sellerId as any)?._id
+          : (product?.sellerId ?? "");
       setSellerId(sellerIdStr);
-      
+
       setStock(product?.stock ?? 0);
       setWeight(product?.weight ?? 500);
       setHasSizes(product?.hasSizes ?? false);
@@ -116,7 +122,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     );
   };
 
-  const uploadImage = (pic: File): Promise<string> => {
+  const uploadImage = (pic: File): Promise<ProductImage> => {
     return new Promise((resolve, reject) => {
       if (!pic) {
         setPicMessage("Please Select an image!");
@@ -140,8 +146,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
       })
         .then((res) => res.json())
         .then((data) => {
-          if (data.url) {
-            resolve(data.url.toString());
+          if (data?.url && data?.public_id) {
+            resolve({
+              url: data?.url.toString(),
+              public_id: data?.public_id.toString(),
+            });
           } else {
             reject("Cloudinary upload failed");
           }
@@ -181,24 +190,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
     if (images.length > 0) {
       try {
-        // Separate existing image URLs from new File objects
-        const existingImageUrls = images.filter(
-          (img): img is string => typeof img === "string",
+        // Separate existing image objects from new File objects
+        const existingImages = images.filter(
+          (img): img is ProductImage =>
+            typeof img === "object" && img !== null && "url" in img,
         );
         const newImageFiles = images.filter(
           (img): img is File => img instanceof File,
         );
 
         // Upload only the new files
-        const newImageUrls = await Promise.all(
+        const newImageObjects = await Promise.all(
           newImageFiles.map((file) => uploadImage(file)),
         );
 
-        // Combine old and new URLs
-        const allImageUrls = [...existingImageUrls, ...newImageUrls];
+        // Combine old and new image objects
+        const allImages = [...existingImages, ...newImageObjects];
 
-        if (allImageUrls.length > 0)
-          formData.append("images", JSON.stringify(allImageUrls));
+        if (allImages.length > 0)
+          formData.append("images", JSON.stringify(allImages));
       } catch (error) {
         setPicMessage("Image upload failed. Please try again.");
         return;
@@ -432,9 +442,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <div className="flex gap-2 mt-2">
             {images?.map((image, index) => {
               const imageUrl =
-                typeof image === "string"
-                  ? image
-                  : URL.createObjectURL(image as Blob);
+                image instanceof File
+                  ? URL.createObjectURL(image)
+                  : (image as ProductImage)?.url;
               return (
                 <Box key={index} className="relative">
                   <img
@@ -481,5 +491,4 @@ const ProductForm: React.FC<ProductFormProps> = ({
     </Paper>
   );
 };
-
 export default ProductForm;

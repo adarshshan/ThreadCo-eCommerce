@@ -36,6 +36,19 @@ export class ProductRepository implements IProductRepository {
     connectToDatabase();
   }
 
+  private normalizeProduct(product: any): ProductDocument | null {
+    if (!product) return null;
+    if (product.images && Array.isArray(product.images)) {
+      product.images = product.images.map((img: any) => {
+        if (typeof img === "string") {
+          return { url: img, public_id: "" };
+        }
+        return img;
+      });
+    }
+    return product as ProductDocument;
+  }
+
   async findRelatedProducts(
     productId: string,
     limit: number = 10,
@@ -45,7 +58,7 @@ export class ProductRepository implements IProductRepository {
       .lean();
     if (!product) return [];
 
-    return (await ProductModel.find({
+    const products = await ProductModel.find({
       category: product.category,
       _id: { $ne: productId },
       isActive: true,
@@ -54,7 +67,11 @@ export class ProductRepository implements IProductRepository {
       .populate("category", "name")
       .select("name price images category stock hasSizes sizes")
       .lean()
-      .exec()) as unknown as ProductDocument[];
+      .exec();
+
+    return (
+      products.map((p) => this.normalizeProduct(p)) as ProductDocument[]
+    ).filter(Boolean);
   }
 
   async countAll(filters: ProductFilters = {}): Promise<number> {
@@ -118,16 +135,22 @@ export class ProductRepository implements IProductRepository {
       findQuery.skip(skip).limit(filters.limit);
     }
 
-    const products = (await findQuery.exec()) as unknown as ProductDocument[];
-    return { products, totalItems };
+    const products = await findQuery.exec();
+    return {
+      products: (
+        products.map((p) => this.normalizeProduct(p)) as ProductDocument[]
+      ).filter(Boolean),
+      totalItems,
+    };
   }
 
   async findById(id: string): Promise<ProductDocument | null> {
     try {
-      return (await ProductModel.findById(id)
+      const product = await ProductModel.findById(id)
         .populate("category", "name")
         .lean()
-        .exec()) as unknown as ProductDocument | null;
+        .exec();
+      return this.normalizeProduct(product);
     } catch (error) {
       if (
         error instanceof Error &&
@@ -142,7 +165,10 @@ export class ProductRepository implements IProductRepository {
   async create(product: ProductDocument): Promise<ProductDocument> {
     const newProduct = new ProductModel(product);
     const savedProduct = await newProduct.save();
-    return (await savedProduct.populate("category")) as ProductDocument;
+    const populatedProduct = await savedProduct.populate("category");
+    return this.normalizeProduct(
+      populatedProduct.toObject(),
+    ) as ProductDocument;
   }
 
   async update(
@@ -159,15 +185,17 @@ export class ProductRepository implements IProductRepository {
         { new: true },
       )
         .populate("category")
+        .lean()
         .exec();
 
       if (!updatedProduct) {
         console.log("No product found in DB for ID:", id);
+        return null;
       } else {
         console.log("Product updated successfully in DB");
       }
 
-      return updatedProduct as ProductDocument | null;
+      return this.normalizeProduct(updatedProduct);
     } catch (error) {
       console.error("Error in Repository update:", error);
       if (

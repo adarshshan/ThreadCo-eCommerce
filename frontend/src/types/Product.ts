@@ -3,6 +3,11 @@ export interface ProductSize {
   stock: number;
 }
 
+export interface ProductImage {
+  url: string;
+  public_id: string;
+}
+
 export interface Product {
   _id: string | number;
   name: string;
@@ -13,7 +18,7 @@ export interface Product {
   hasSizes?: boolean;
   category?: { _id: string; name: string };
   sizes?: ProductSize[];
-  images?: string[];
+  images?: ProductImage[];
   sellerId?: string;
   weight?: number;
   createdAt?: string;

@@ -74,14 +74,14 @@ const OrderDetails: React.FC = () => {
 
   const isCancelEligible = (order: Order) => {
     if (
-      order.status === "Shipped" ||
-      order.status === "Delivered" ||
-      order.status === "Cancelled" ||
-      order.status === "Returned"
+      order?.status === "Shipped" ||
+      order?.status === "Delivered" ||
+      order?.status === "Cancelled" ||
+      order?.status === "Returned"
     ) {
       return false;
     }
-    const orderDate = new Date(order.createdAt);
+    const orderDate = new Date(order?.createdAt);
     const diffTime = Math.abs(Date.now() - orderDate.getTime());
     const diffHours = diffTime / (1000 * 60 * 60);
     return diffHours <= 24;
@@ -138,19 +138,19 @@ const OrderDetails: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
               <h1 className="text-3xl font-serif font-black text-text-primary">
-                Order #{order._id.slice(-8).toUpperCase()}
+                Order #{order?._id?.slice(-8).toUpperCase()}
               </h1>
               <p className="text-text-secondary">
                 Placed on{" "}
-                {new Date(order.createdAt).toLocaleDateString(undefined, {
+                {new Date(order?.createdAt).toLocaleDateString(undefined, {
                   dateStyle: "long",
                 })}
               </p>
             </div>
             <span
-              className={`badge px-4 py-1.5 text-sm ${getStatusStyle(order.status)}`}
+              className={`badge px-4 py-1.5 text-sm ${getStatusStyle(order?.status)}`}
             >
-              {order.status}
+              {order?.status}
             </span>
           </div>
 
@@ -165,42 +165,42 @@ const OrderDetails: React.FC = () => {
                   </h3>
                 </div>
                 <div className="space-y-6">
-                  {order.items.map((item, index) => (
+                  {order?.items?.map((item, index) => (
                     <div
                       key={index}
                       className="flex gap-6 items-center border-b border-border pb-6 last:border-0 last:pb-0 group"
                     >
                       <div className="w-20 h-24 bg-surface-light rounded-lg overflow-hidden flex-shrink-0">
                         <img
-                          src={item.image}
-                          alt={item.name}
+                          src={item?.image}
+                          alt={item?.name}
                           className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
                       </div>
                       <div className="flex-grow min-w-0">
                         <h4 className="text-lg font-bold text-text-primary mb-1 truncate">
-                          {item.name}
+                          {item?.name}
                         </h4>
                         <div className="flex flex-wrap gap-3 text-sm text-text-muted">
                           <span>
                             Qty:{" "}
                             <span className="text-text-primary font-medium">
-                              {item.quantity}
+                              {item?.quantity}
                             </span>
                           </span>
-                          {item.size && (
+                          {item?.size && (
                             <span>
                               Size:{" "}
                               <span className="text-text-primary font-medium">
-                                {item.size}
+                                {item?.size}
                               </span>
                             </span>
                           )}
-                          {item.color && (
+                          {item?.color && (
                             <span>
                               Color:{" "}
                               <span className="text-text-primary font-medium">
-                                {item.color}
+                                {item?.color}
                               </span>
                             </span>
                           )}
@@ -208,10 +208,10 @@ const OrderDetails: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-accent">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₹{(item?.price * item?.quantity)?.toFixed(2)}
                         </p>
                         <p className="text-xs text-text-muted">
-                          ${item.price.toFixed(2)} each
+                          ₹{item?.price?.toFixed(2)} each
                         </p>
                       </div>
                     </div>
@@ -220,30 +220,30 @@ const OrderDetails: React.FC = () => {
               </div>
 
               {/* Status Notifications */}
-              {(order.status === "Cancelled" || order.returnStatus) && (
+              {(order?.status === "Cancelled" || order?.returnStatus) && (
                 <div className="space-y-2 sm:space-y-4">
-                  {order.status === "Cancelled" && (
+                  {order?.status === "Cancelled" && (
                     <div className="bg-error/10 border border-error/20 p-3 sm:p-6 rounded-2xl">
                       <h4 className="text-error font-bold mb-2">
                         Order Cancelled
                       </h4>
                       <p className="text-sm text-text-secondary">
-                        Reason: {order.cancelReason}
+                        Reason: {order?.cancelReason}
                       </p>
                       <p className="text-xs text-text-muted mt-2">
                         Processed on{" "}
-                        {order.cancelDate &&
-                          new Date(order.cancelDate).toLocaleDateString()}
+                        {order?.cancelDate &&
+                          new Date(order?.cancelDate).toLocaleDateString()}
                       </p>
                     </div>
                   )}
-                  {order.returnStatus && (
+                  {order?.returnStatus && (
                     <div className="bg-warning/10 border border-warning/20 p-6 rounded-2xl">
                       <h4 className="text-warning font-bold mb-2">
-                        Return {order.returnStatus}
+                        Return {order?.returnStatus}
                       </h4>
                       <p className="text-sm text-text-secondary">
-                        Reason: {order.returnReason}
+                        Reason: {order?.returnReason}
                       </p>
                     </div>
                   )}
@@ -267,20 +267,20 @@ const OrderDetails: React.FC = () => {
                     </div>
                     <div className="text-sm text-text-secondary space-y-1">
                       <p className="font-bold text-text-primary text-base">
-                        {order.shippingAddress.fullName}
+                        {order?.shippingAddress?.fullName}
                       </p>
-                      <p>{order.shippingAddress.addressLine1}</p>
-                      {order.shippingAddress.addressLine2 && (
-                        <p>{order.shippingAddress.addressLine2}</p>
+                      <p>{order?.shippingAddress?.addressLine1}</p>
+                      {order?.shippingAddress?.addressLine2 && (
+                        <p>{order?.shippingAddress?.addressLine2}</p>
                       )}
                       <p>
-                        {order.shippingAddress.city},{" "}
-                        {order.shippingAddress.state}{" "}
-                        {order.shippingAddress.postalCode}
+                        {order?.shippingAddress?.city},{" "}
+                        {order?.shippingAddress?.state}{" "}
+                        {order?.shippingAddress?.postalCode}
                       </p>
-                      <p>{order.shippingAddress.country}</p>
+                      <p>{order?.shippingAddress?.country}</p>
                       <p className="pt-2">
-                        Phone: {order.shippingAddress.phone}
+                        Phone: {order?.shippingAddress?.phone}
                       </p>
                     </div>
                   </section>
@@ -296,15 +296,15 @@ const OrderDetails: React.FC = () => {
                       <div className="flex justify-between">
                         <span>Method:</span>
                         <span className="text-text-primary font-medium">
-                          {order.paymentMethod}
+                          {order?.paymentMethod}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Status:</span>
                         <span
-                          className={`font-bold ${order.isPaid ? "text-success" : "text-error"}`}
+                          className={`font-bold ${order?.isPaid ? "text-success" : "text-error"}`}
                         >
-                          {order.isPaid ? "Paid" : "Pending"}
+                          {order?.isPaid ? "Paid" : "Pending"}
                         </span>
                       </div>
                     </div>
@@ -321,19 +321,19 @@ const OrderDetails: React.FC = () => {
                   <div className="flex justify-between text-text-secondary">
                     <span>Subtotal</span>
                     <span className="text-text-primary font-medium">
-                      ${order.itemsPrice.toFixed(2)}
+                      ₹{order?.itemsPrice?.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-text-secondary">
                     <span>Shipping</span>
                     <span className="text-success font-medium">
-                      ${order.shippingPrice.toFixed(2)}
+                      ₹{order?.shippingPrice?.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-text-secondary">
                     <span>Tax</span>
                     <span className="text-text-primary font-medium">
-                      ${order.taxPrice.toFixed(2)}
+                      ₹{order?.taxPrice?.toFixed(2)}
                     </span>
                   </div>
                   <div className="border-t border-border pt-4 mt-4">
@@ -342,7 +342,7 @@ const OrderDetails: React.FC = () => {
                         Total Amount
                       </span>
                       <span className="text-2xl font-black text-accent">
-                        ${order.totalPrice.toFixed(2)}
+                        ₹{order?.totalPrice?.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -352,17 +352,22 @@ const OrderDetails: React.FC = () => {
               {/* Order Actions */}
               <div className="space-y-3">
                 {isCancelEligible(order) ? (
-                  <CustomButton
-                    onclick={() => setIsCancelOpen(true)}
-                    className="btn-outline text-error border-error/30 hover:bg-error/10 hover:border-error"
-                  >
-                    Cancel Order
-                  </CustomButton>
+                  <div className="space-y-2">
+                    <p className="text-xs text-text-muted text-center font-medium">
+                      Cancellation available within 24 hours of ordering
+                    </p>
+                    <CustomButton
+                      onclick={() => setIsCancelOpen(true)}
+                      className="btn-outline text-error border-error/30 hover:bg-error/10 hover:border-error"
+                    >
+                      Cancel Order
+                    </CustomButton>
+                  </div>
                 ) : (
-                  order.status !== "Shipped" &&
-                  order.status !== "Delivered" &&
-                  order.status !== "Cancelled" &&
-                  order.status !== "Returned" && (
+                  order?.status !== "Shipped" &&
+                  order?.status !== "Delivered" &&
+                  order?.status !== "Cancelled" &&
+                  order?.status !== "Returned" && (
                     <div className="bg-surface-light/50 border border-border p-4 rounded-xl text-center">
                       <p className="text-text-muted text-sm font-medium">
                         Cancellation window closed (24h)
@@ -429,7 +434,7 @@ const OrderDetails: React.FC = () => {
                 Why are you cancelling?
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {cancellationReasons.map((r) => (
+                {cancellationReasons?.map((r) => (
                   <button
                     key={r}
                     onClick={() => setSelectedReason(r)}
