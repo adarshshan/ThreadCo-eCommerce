@@ -139,7 +139,7 @@ const MyOrders = () => {
 
                     {/* Preview Images */}
                     <div className="flex gap-2 pt-2">
-                      {order?.items.slice(0, 4).map((item, idx) => (
+                      {order?.items?.slice(0, 4).map((item, idx) => (
                         <div
                           key={idx}
                           className="w-10 h-10 rounded border border-border overflow-hidden bg-surface-light"

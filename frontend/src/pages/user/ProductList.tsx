@@ -356,42 +356,42 @@ const ProductList: React.FC = () => {
               </SearchContainer>
 
               {/* Autocomplete Dropdown */}
-              {showDropdown && searchQuery.trim().length >= 2 && (
+              {showDropdown && searchQuery.trim()?.length >= 2 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[300px] max-h-[400px] overflow-y-auto">
-                  {suggestions.products.length === 0 &&
-                  suggestions.categories.length === 0 &&
-                  suggestions.brands.length === 0 &&
+                  {suggestions?.products?.length === 0 &&
+                  suggestions?.categories?.length === 0 &&
+                  suggestions?.brands?.length === 0 &&
                   !loadingSuggestions ? (
                     <div className="p-4 text-center text-text-secondary text-sm">
                       No results found for "{searchQuery}"
                     </div>
                   ) : (
                     <>
-                      {suggestions.products.length > 0 && (
+                      {suggestions?.products?.length > 0 && (
                         <div className="p-2">
                           <h3 className="text-[10px] font-bold uppercase tracking-widest text-text-muted px-2 mb-1">
                             Products
                           </h3>
-                          {suggestions.products.map((product) => (
+                          {suggestions?.products?.map((product) => (
                             <div
-                              key={product._id}
+                              key={product?._id}
                               onClick={() => {
-                                navigate(`/product/${product._id}`);
+                                navigate(`/product/${product?._id}`);
                                 setShowDropdown(false);
                               }}
                               className="flex items-center gap-3 p-2 hover:bg-surface-hover rounded-lg cursor-pointer transition-colors"
                             >
                               <img
-                                src={product.images?.[0]}
-                                alt={product.name}
+                                src={product?.images?.[0]?.url}
+                                alt={product?.name}
                                 className="w-8 h-8 object-cover rounded-md"
                               />
                               <div className="flex-grow overflow-hidden">
                                 <p className="text-sm font-medium text-text-primary truncate">
-                                  {highlightMatch(product.name, searchQuery)}
+                                  {highlightMatch(product?.name, searchQuery)}
                                 </p>
                                 <p className="text-xs text-text-secondary">
-                                  ₹{product.price}
+                                  ₹{product?.price}
                                 </p>
                               </div>
                             </div>
@@ -399,47 +399,47 @@ const ProductList: React.FC = () => {
                         </div>
                       )}
 
-                      {suggestions.categories.length > 0 && (
+                      {suggestions?.categories?.length > 0 && (
                         <div className="p-2 border-t border-border">
                           <h3 className="text-[10px] font-bold uppercase tracking-widest text-text-muted px-2 mb-1">
                             Categories
                           </h3>
-                          {suggestions.categories.map((cat) => (
+                          {suggestions?.categories?.map((cat) => (
                             <div
-                              key={cat.slug}
+                              key={cat?.slug}
                               onClick={() => {
-                                handleCategoryChange(cat.slug); // Assuming slug can be used as category filter or we need _id
+                                handleCategoryChange(cat?.slug); // Assuming slug can be used as category filter or we need _id
                                 // If categories filter uses _id, we might need to find the category object first
                                 // For now, setting it via slug if API supports it, or finding it in categories state
-                                const categoryObj = categories.find(
-                                  (c) => c.slug === cat.slug,
+                                const categoryObj = categories?.find(
+                                  (c) => c?.slug === cat?.slug,
                                 );
                                 if (categoryObj)
-                                  handleCategoryChange(categoryObj._id);
+                                  handleCategoryChange(categoryObj?._id);
 
                                 setSearchQuery("");
                                 setShowDropdown(false);
                               }}
                               className="p-2 hover:bg-surface-hover rounded-lg cursor-pointer text-sm text-text-primary"
                             >
-                              {highlightMatch(cat.name, searchQuery)}
+                              {highlightMatch(cat?.name, searchQuery)}
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {suggestions.brands.length > 0 && (
+                      {suggestions?.brands?.length > 0 && (
                         <div className="p-2 border-t border-border">
                           <h3 className="text-[10px] font-bold uppercase tracking-widest text-text-muted px-2 mb-1">
                             Brands
                           </h3>
-                          {suggestions.brands.map((brand) => (
+                          {suggestions?.brands?.map((brand) => (
                             <div
-                              key={brand.name}
+                              key={brand?.name}
                               onClick={() => {
                                 setFilters((prev) => ({
                                   ...prev,
-                                  brand: brand.name,
+                                  brand: brand?.name,
                                 }));
                                 setSearchQuery("");
                                 setShowDropdown(false);

@@ -89,7 +89,7 @@ const Wishlist: React.FC = () => {
                   onClick={() => navigate(`/product/${product?._id}`)}
                 >
                   <img
-                    src={product?.images?.[0]}
+                    src={product?.images?.[0]?.url}
                     alt={product?.name}
                     className="w-full h-full object-cover"
                   />

@@ -171,53 +171,53 @@ const Inventory: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {products.length > 0 ? (
-                products.map((product) => (
+              {products?.length > 0 ? (
+                products?.map((product) => (
                   <tr
-                    key={product._id}
+                    key={product?._id}
                     className="hover:bg-surface-light/50 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-16 rounded-lg bg-surface-light overflow-hidden flex-shrink-0">
                           <img
-                            src={product.images[0]}
-                            alt={product.name}
+                            src={product?.images[0]?.url}
+                            alt={product?.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-text-primary truncate">
-                            {product.name}
+                            {product?.name}
                           </p>
                           <p className="text-xs text-text-muted">
-                            ${product.price.toFixed(2)}
+                            ${product?.price?.toFixed(2)}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-text-secondary">
-                        {product.category?.name}
+                        {product?.category?.name}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {product.hasSizes ? (
+                      {product?.hasSizes ? (
                         <div className="flex flex-wrap gap-1">
-                          {product.sizes.map((s: any) => (
+                          {product?.sizes?.map((s: any) => (
                             <span
-                              key={s.size}
+                              key={s?.size}
                               className="text-[10px] font-bold bg-surface-light border border-border px-1.5 py-0.5 rounded uppercase"
                             >
-                              {s.size}:{" "}
+                              {s?.size}:{" "}
                               <span
                                 className={
-                                  s.stock < 5
+                                  s?.stock < 5
                                     ? "text-error"
                                     : "text-text-primary"
                                 }
                               >
-                                {s.stock}
+                                {s?.stock}
                               </span>
                             </span>
                           ))}
