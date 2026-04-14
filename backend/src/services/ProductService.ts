@@ -1,11 +1,16 @@
 import { ProductDocument, ProductImage } from "../models/productsSchema";
-import { IProductRepository, ProductFilters } from "../repositories/ProductRepository";
-import { deleteImage, deleteMultipleImages } from "../utils/cloudinary";
+import {
+  IProductRepository,
+  ProductFilters,
+} from "../repositories/ProductRepository";
+import { deleteMultipleImages } from "../utils/cloudinary";
 
 export class ProductService {
   constructor(private productRepository: IProductRepository) {}
 
-  async getAllProducts(filters?: ProductFilters): Promise<{ products: ProductDocument[]; totalItems: number }> {
+  async getAllProducts(
+    filters?: ProductFilters,
+  ): Promise<{ products: ProductDocument[]; totalItems: number }> {
     return this.productRepository.findAll(filters);
   }
 
@@ -13,12 +18,15 @@ export class ProductService {
     return this.productRepository.findById(id);
   }
 
-  async getRelatedProducts(productId: string, limit?: number): Promise<ProductDocument[]> {
+  async getRelatedProducts(
+    productId: string,
+    limit?: number,
+  ): Promise<ProductDocument[]> {
     return this.productRepository.findRelatedProducts(productId, limit);
   }
 
   async createProduct(
-    productData: Omit<ProductDocument, "_id">
+    productData: Omit<ProductDocument, "_id">,
   ): Promise<ProductDocument> {
     const product: Omit<ProductDocument, "_id"> = {
       ...productData,
@@ -28,17 +36,21 @@ export class ProductService {
 
   async updateProduct(
     id: string,
-    productData: Partial<ProductDocument>
+    productData: Partial<ProductDocument>,
   ): Promise<ProductDocument | null> {
     // If images are being updated, find and delete removed images from Cloudinary
     if (productData.images) {
       const oldProduct = await this.productRepository.findById(id);
       if (oldProduct && oldProduct.images) {
-        const oldImagePublicIds = oldProduct.images.map((img: ProductImage) => img.public_id);
-        const newImagePublicIds = productData.images.map((img: ProductImage) => img.public_id);
-        
+        const oldImagePublicIds = oldProduct.images.map(
+          (img: ProductImage) => img.public_id,
+        );
+        const newImagePublicIds = productData.images.map(
+          (img: ProductImage) => img.public_id,
+        );
+
         const removedImagePublicIds = oldImagePublicIds.filter(
-          (id: string) => !newImagePublicIds.includes(id)
+          (id: string) => !newImagePublicIds.includes(id),
         );
 
         if (removedImagePublicIds.length > 0) {
@@ -56,7 +68,9 @@ export class ProductService {
 
     // Delete all images from Cloudinary
     if (product.images && product.images.length > 0) {
-      const public_ids = product.images.map((img: ProductImage) => img.public_id);
+      const public_ids = product.images.map(
+        (img: ProductImage) => img.public_id,
+      );
       await deleteMultipleImages(public_ids);
     }
 

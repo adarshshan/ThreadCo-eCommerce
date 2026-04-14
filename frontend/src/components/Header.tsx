@@ -36,7 +36,7 @@ const Header: React.FC = () => {
             to="/"
             className="text-2xl md:text-3xl font-serif font-black text-[var(--color-text-Header)] tracking-tighter  hover:text-accent transition-colors"
           >
-            ThreadCo
+            Thread<span className="text-accent">Co</span>
           </Link>
         </div>
 

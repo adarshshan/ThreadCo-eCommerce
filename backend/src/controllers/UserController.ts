@@ -17,7 +17,7 @@ export class UserController {
       const { email, password }: { email: string; password: string } = req.body;
       const loginStatus = await this.userService.userLogin(email, password); //This would return authResponse or throws error
 
-      const accessTokenMaxAge = 30 * 60 * 1000;
+      const accessTokenMaxAge = 2 * 60 * 60 * 1000;
       const refreshTokenMaxAge = 48 * 60 * 60 * 1000;
 
       res
@@ -213,6 +213,103 @@ export class UserController {
     }
   }
 
+  async getAddresses(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req?.userId;
+      if (!userId) {
+        res.status(401).json({ message: "User not authenticated" });
+        return;
+      }
+      const addresses = await this.userService.getAddresses(userId);
+      res.json({ success: true, addresses });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching addresses" });
+    }
+  }
+
+  async addAddress(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req?.userId;
+      if (!userId) {
+        res.status(401).json({ message: "User not authenticated" });
+        return;
+      }
+      const user = await this.userService.addAddress(userId, req.body);
+      res.status(201).json({
+        success: true,
+        message: "Address added",
+        addresses: user?.addresses,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error adding address" });
+    }
+  }
+
+  async updateAddress(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req?.userId;
+      const { addressId } = req.params;
+      if (!userId) {
+        res.status(401).json({ message: "User not authenticated" });
+        return;
+      }
+      const user = await this.userService.updateAddress(
+        userId,
+        addressId,
+        req.body,
+      );
+      if (!user) {
+        res.status(404).json({ message: "Address not found" });
+        return;
+      }
+      res.json({
+        success: true,
+        message: "Address updated",
+        addresses: user?.addresses,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error updating address" });
+    }
+  }
+
+  async deleteAddress(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req?.userId;
+      const { addressId } = req.params;
+      if (!userId) {
+        res.status(401).json({ message: "User not authenticated" });
+        return;
+      }
+      const user = await this.userService.deleteAddress(userId, addressId);
+      res.json({
+        success: true,
+        message: "Address deleted",
+        addresses: user?.addresses,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting address" });
+    }
+  }
+
+  async setDefaultAddress(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req?.userId;
+      const { addressId } = req.params;
+      if (!userId) {
+        res.status(401).json({ message: "User not authenticated" });
+        return;
+      }
+      const user = await this.userService.setDefaultAddress(userId, addressId);
+      res.json({
+        success: true,
+        message: "Default address updated",
+        addresses: user?.addresses,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error setting default address" });
+    }
+  }
+
   async googleSignIn(req: Request, res: Response) {
     const { credential, client_id } = req.body;
     try {
@@ -240,8 +337,8 @@ export class UserController {
         user?._id as string,
       );
 
-      const accessTokenMaxAge = 30 * 60 * 1000;
-      const refreshTokenMaxAge = 48 * 60 * 60 * 1000;
+      const accessTokenMaxAge = 2 * 60 * 60 * 1000; //two hours
+      const refreshTokenMaxAge = 48 * 60 * 60 * 1000; //two days
       // Send the token as a cookie and response
       res
         .status(200)

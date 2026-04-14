@@ -23,7 +23,8 @@ export interface ProductDocument extends Document {
   description: string;
   stock: number; // For products WITHOUT sizes
   hasSizes: boolean;
-  category: Types.ObjectId | string;
+  category?: Types.ObjectId | string; // Deprecated, kept for migration/compatibility
+  categories: (Types.ObjectId | string)[];
   subCategory?: string;
   sizes: ProductSize[];
   images: ProductImage[];
@@ -59,7 +60,13 @@ const productSchema = new Schema<ProductDocument>(
     description: { type: String, required: true, trim: true },
     stock: { type: Number, required: true, min: 0, default: 0 },
     hasSizes: { type: Boolean, default: false },
-    category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
+    category: { type: Schema.Types.ObjectId, ref: "Category", index: true }, // Keep temporarily for migration
+    categories: { 
+      type: [{ type: Schema.Types.ObjectId, ref: "Category" }], 
+      required: true, 
+      index: true,
+      default: []
+    },
     subCategory: { type: String, trim: true },
     sizes: { type: [sizeSchema], default: [] },
     images: { type: [productImageSchema], default: [] },

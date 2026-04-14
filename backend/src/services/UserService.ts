@@ -1,5 +1,5 @@
 import { IUserRepository } from "../repositories/UserRepository";
-import { UserDocument } from "../models/UserSchema";
+import { Address, UserDocument } from "../models/UserSchema";
 import Encrypt from "../utils/comparePassword";
 import { CreateJWT } from "../utils/generateToken";
 import { DatabaseError, NotFoundError } from "../utils/errors";
@@ -159,5 +159,25 @@ export class UserService {
     if (!user) return null;
     const isValid = await user.comparePassword(password);
     return isValid ? user : null;
+  }
+
+  async addAddress(userId: string, address: Address): Promise<UserDocument | null> {
+    return this.userRepository.addAddress(userId, address);
+  }
+
+  async getAddresses(userId: string): Promise<Address[]> {
+    return this.userRepository.getAddresses(userId);
+  }
+
+  async updateAddress(userId: string, addressId: string, address: Partial<Address>): Promise<UserDocument | null> {
+    return this.userRepository.updateAddress(userId, addressId, address);
+  }
+
+  async deleteAddress(userId: string, addressId: string): Promise<UserDocument | null> {
+    return this.userRepository.deleteAddress(userId, addressId);
+  }
+
+  async setDefaultAddress(userId: string, addressId: string): Promise<UserDocument | null> {
+    return this.userRepository.setDefaultAddress(userId, addressId);
   }
 }

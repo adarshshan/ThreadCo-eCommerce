@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../../store/useStore";
 import { getMyOrders } from "../../services/api";
@@ -7,32 +7,54 @@ import LocalMallIcon from "@mui/icons-material/LocalMall";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import Loading from "../../components/Loading";
-import Pagination from "../../components/Pagination";
+import { CircularProgress } from "@mui/material";
 
 const MyOrders = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
   const { user } = useStore();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [page, setPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(0);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [page]);
+  // Infinite Scroll States
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  const lastOrderElementRef = useCallback((node: HTMLDivElement | null) => {
+    if (isLoading || isFetchingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => prev + 1);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [isLoading, isFetchingMore, hasMore]);
 
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
       try {
-        setLoading(true);
+        if (page === 1) setIsLoading(true);
+        else setIsFetchingMore(true);
+
         const data = await getMyOrders(page);
-        setOrders(data?.orders);
-        setTotalPages(data?.totalPages);
+        
+        if (page === 1) {
+          setOrders(data?.orders || []);
+        } else {
+          setOrders(prev => [...prev, ...(data?.orders || [])]);
+        }
+        
+        setHasMore(data?.hasMore);
       } catch (error) {
         console.error("Error fetching orders:", error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
+        setIsFetchingMore(false);
       }
     };
 
@@ -54,13 +76,13 @@ const MyOrders = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading && page === 1) {
     return <Loading />;
   }
 
   return (
     <div className="min-h-screen bg-background py-4 sm:py-12 px-[1rem] lg:px-[8rem] xl:px-[20rem]">
-      <div className="container-custom ">
+      <div className="container-custom">
         <div className="mb-4 sm:mb-10">
           <h1 className="text-3xl md:text-4xl font-serif font-black mb-2">
             Order History
@@ -70,7 +92,7 @@ const MyOrders = () => {
           </p>
         </div>
 
-        {orders?.length === 0 ? (
+        {orders?.length === 0 && !isLoading ? (
           <div className="card bg-surface p-16 text-center max-w-2xl mx-auto border-dashed">
             <div className="bg-surface-light w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
               <LocalMallIcon
@@ -90,83 +112,90 @@ const MyOrders = () => {
           </div>
         ) : (
           <div className="w-full md:w-[80%] grid grid-cols-1 gap-3 sm:gap-6">
-            {orders?.map((order) => (
-              <div
-                key={`order-${order?._id}`}
-                onClick={() => navigate(`/orders/${order?._id}`)}
-                className="card bg-surface p-3 sm:p-4 hover:border-accent/30 transition-all cursor-pointer group"
-              >
-                <div className="flex flex-col md:flex-row justify-between sm:gap-6">
-                  <div className="space-y-1 sm:space-y-3 flex-grow">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-lg font-bold text-text-primary uppercase tracking-tighter">
-                        Order #
-                        {order?._id
-                          .substring(order?._id?.length - 8)
-                          .toUpperCase()}
-                      </span>
-                      <span
-                        className={`badge border ${getStatusStyle(order?.status)}`}
-                      >
-                        {order?.status}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <CalendarTodayIcon sx={{ fontSize: 16 }} />
-                        <span>
-                          {new Date(order?.createdAt).toLocaleDateString(
-                            undefined,
-                            { dateStyle: "long" },
-                          )}
+            {orders?.map((order, index) => {
+              const isLast = orders.length === index + 1;
+              return (
+                <div
+                  key={`order-${order?._id}`}
+                  ref={isLast ? lastOrderElementRef : null}
+                  onClick={() => navigate(`/orders/${order?._id}`)}
+                  className="card bg-surface p-3 sm:p-4 hover:border-accent/30 transition-all cursor-pointer group"
+                >
+                  <div className="flex flex-col md:flex-row justify-between sm:gap-6">
+                    <div className="space-y-1 sm:space-y-3 flex-grow">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-lg font-bold text-text-primary uppercase tracking-tighter">
+                          Order #
+                          {order?._id
+                            .substring(order?._id?.length - 8)
+                            .toUpperCase()}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <PaymentsIcon sx={{ fontSize: 16 }} />
-                        <span className="font-bold text-text-primary">
-                          ₹{order?.totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <LocalMallIcon sx={{ fontSize: 16 }} />
-                        <span>
-                          {order?.items?.length}{" "}
-                          {order?.items?.length === 1 ? "Item" : "Items"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Preview Images */}
-                    <div className="flex gap-2 pt-2">
-                      {order?.items?.slice(0, 4).map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="w-10 h-10 rounded border border-border overflow-hidden bg-surface-light"
+                        <span
+                          className={`badge border ${getStatusStyle(order?.status)}`}
                         >
-                          <img
-                            src={item?.image}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
+                          {order?.status}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 text-sm">
+                        <div className="flex items-center gap-2 text-text-secondary">
+                          <CalendarTodayIcon sx={{ fontSize: 16 }} />
+                          <span>
+                            {new Date(order?.createdAt).toLocaleDateString(
+                              undefined,
+                              { dateStyle: "long" },
+                            )}
+                          </span>
                         </div>
-                      ))}
-                      {order?.items?.length > 4 && (
-                        <div className="w-10 h-10 rounded border border-border bg-surface-light flex items-center justify-center text-[10px] font-bold text-text-muted">
-                          +{order?.items?.length - 4}
+                        <div className="flex items-center gap-2 text-text-secondary">
+                          <PaymentsIcon sx={{ fontSize: 16 }} />
+                          <span className="font-bold text-text-primary">
+                            ₹{order?.totalPrice.toFixed(2)}
+                          </span>
                         </div>
-                      )}
+                        <div className="flex items-center gap-2 text-text-secondary">
+                          <LocalMallIcon sx={{ fontSize: 16 }} />
+                          <span>
+                            {order?.items?.length}{" "}
+                            {order?.items?.length === 1 ? "Item" : "Items"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Preview Images */}
+                      <div className="flex gap-2 pt-2">
+                        {order?.items?.slice(0, 4).map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="w-10 h-10 rounded border border-border overflow-hidden bg-surface-light"
+                          >
+                            <img
+                              src={item?.image}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                        {order?.items?.length > 4 && (
+                          <div className="w-10 h-10 rounded border border-border bg-surface-light flex items-center justify-center text-[10px] font-bold text-text-muted">
+                            +{order?.items?.length - 4}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            <div className="mb-4 sm:mt-8">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
+              );
+            })}
+            
+            {/* Fetching More Loader */}
+            <div className="h-20 flex items-center justify-center mt-4">
+              {isFetchingMore && <CircularProgress size={24} className="!text-accent" />}
+              {!hasMore && orders.length > 0 && (
+                <p className="text-text-muted text-sm font-bold uppercase tracking-widest">
+                  End of your order history
+                </p>
+              )}
             </div>
           </div>
         )}

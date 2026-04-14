@@ -17,6 +17,7 @@ export interface Product {
   stock?: number;
   hasSizes?: boolean;
   category?: { _id: string; name: string };
+  categories?: { _id: string; name: string }[];
   sizes?: ProductSize[];
   images?: ProductImage[];
   sellerId?: string;

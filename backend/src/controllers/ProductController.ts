@@ -11,6 +11,7 @@ export class ProductController {
 
       const filters = {
         category: req.query.category as string,
+        categories: req.query.categories ? (req.query.categories as string).split(",") : undefined,
         minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
         maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
         search: req.query.search as string,
@@ -21,11 +22,13 @@ export class ProductController {
 
       const { products, totalItems } =
         await this.productService.getAllProducts(filters);
+      const totalPages = Math.ceil(totalItems / limit);
       res.json({
         products,
         totalItems,
         currentPage: page,
-        totalPages: Math.ceil(totalItems / limit),
+        totalPages,
+        hasMore: page < totalPages,
       });
     } catch (error) {
       res.status(500).json({ message: "Error fetching products" });
@@ -63,11 +66,24 @@ export class ProductController {
     try {
       const productData = { ...req.body };
 
+      // Handle categories array parsing
+      let categories = [];
+      if (productData.categories) {
+        try {
+          categories = JSON.parse(productData.categories);
+        } catch (e) {
+          categories = Array.isArray(productData.categories) ? productData.categories : [productData.categories];
+        }
+      } else if (productData.category) {
+        categories = [productData.category];
+      }
+
       const product = await this.productService.createProduct({
         ...productData,
         hasSizes: productData.hasSizes === "true",
         images: productData.images ? JSON.parse(productData.images) : [],
         sizes: productData.sizes ? JSON.parse(productData.sizes) : [],
+        categories,
       });
       res.status(201).json(product);
     } catch (error) {
@@ -78,12 +94,20 @@ export class ProductController {
 
   async updateProduct(req: Request, res: Response): Promise<void> {
     try {
-      console.log("Updating product ID:", req.params.id);
-      console.log("Update data:", req.body);
       const productData = { ...req.body };
       
-      // Remove _id from data if it exists to prevent Mongoose error
       if (productData._id) delete productData._id;
+
+      // Handle categories array parsing
+      if (productData.categories) {
+        try {
+          productData.categories = JSON.parse(productData.categories);
+        } catch (e) {
+          productData.categories = Array.isArray(productData.categories) ? productData.categories : [productData.categories];
+        }
+      } else if (productData.category) {
+        productData.categories = [productData.category];
+      }
 
       const product = await this.productService.updateProduct(req.params.id, {
         ...productData,
@@ -95,15 +119,9 @@ export class ProductController {
           productData.sellerId === "null" || 
           productData.sellerId === "[object Object]" 
             ? undefined : productData.sellerId,
-        category: 
-          productData.category === "" || 
-          productData.category === "null" || 
-          productData.category === "[object Object]" 
-            ? undefined : productData.category,
       });
 
       if (!product) {
-        console.log("Product not found with ID:", req.params.id);
         res.status(404).json({ message: "Product not found" });
         return;
       }

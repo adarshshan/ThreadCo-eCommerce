@@ -11,18 +11,12 @@ import ProductForm from "../../components/ProductForm";
 import CustomModal from "../../components/Modal";
 import Pagination from "../../components/Pagination";
 import { useStore } from "../../store/useStore";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 const ProductManagement: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [page, setPage] = useState(1);
   const { isModalOpen, openModal, closeModal } = useStore();
-
-  // const stock = product?.hasSizes
-  //   ? (product.sizes?.reduce((acc, s) => acc + s.stock, 0) ?? 0)
-  //   : (product?.stock ?? 0);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["products", page],
@@ -117,10 +111,6 @@ const ProductManagement: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Stock
               </th>
-
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -146,7 +136,8 @@ const ProductManagement: React.FC = () => {
               products?.map((product) => (
                 <tr
                   key={product?._id}
-                  className="bg-[var(--color-surface)] hover:bg-surface-light transition-colors group"
+                  onClick={() => handleEditProduct(product)}
+                  className="bg-[var(--color-surface)] hover:bg-surface-light transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4">
                     <div className="font-medium">{product?.name}</div>
@@ -158,9 +149,7 @@ const ProductManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium">
-                      {typeof product?.category === "object"
-                        ? product?.category?.name
-                        : "Uncategorized"}
+                      {product?.categories?.[0]?.name ?? "Uncategorized"}
                     </div>
                   </td>
 
@@ -171,21 +160,6 @@ const ProductManagement: React.FC = () => {
                         ? product?.sizes?.reduce((acc, s) => acc + s.stock, 0)
                         : (product?.stock ?? 0)}
                     </div>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleEditProduct(product)}
-                      className="text-green-500 px-2 py-1 rounded mr-2"
-                    >
-                      <EditIcon />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(String(product?._id))}
-                      className="text-red-500 px-2 py-1 rounded"
-                    >
-                      <DeleteIcon />
-                    </button>
                   </td>
                 </tr>
               ))
@@ -203,6 +177,7 @@ const ProductManagement: React.FC = () => {
           product={selectedProduct}
           onSave={handleSaveProduct}
           onCancel={closeModal}
+          handleDeleteProduct={handleDeleteProduct}
         />
       </CustomModal>
     </div>

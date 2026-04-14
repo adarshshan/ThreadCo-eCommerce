@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { Product } from "../types/Product";
-import type { User } from "../types/User";
+import type { Address, User } from "../types/User";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -78,6 +78,7 @@ export const getProducts = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const params = new URLSearchParams();
   if (filters) {
@@ -151,6 +152,7 @@ export const getUsers = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const response = await axios.get(
     `${VITE_API_URL}/users?page=${page}&limit=${limit}`,
@@ -293,6 +295,7 @@ export const getMyOrders = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const response = await axios.get(
     `${VITE_API_URL}/orders/myorders?page=${page}&limit=${limit}`,
@@ -334,6 +337,7 @@ export const getAllOrders = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const response = await axios.get(
     `${VITE_API_URL}/orders?page=${page}&limit=${limit}`,
@@ -398,6 +402,48 @@ export const removeFromWishlist = async (
 ): Promise<{ wishlist: Product[] }> => {
   const response = await axios.delete(
     `${VITE_API_URL}/wishlist/remove/${productId}`,
+  );
+  return response.data;
+};
+
+export const getAddresses = async (): Promise<{
+  success: boolean;
+  addresses: Address[];
+}> => {
+  const response = await axios.get(`${VITE_API_URL}/users/addresses/all`);
+  return response.data;
+};
+
+export const addAddress = async (
+  address: Partial<Address>,
+): Promise<{ success: boolean; addresses: Address[] }> => {
+  const response = await axios.post(`${VITE_API_URL}/users/address`, address);
+  return response.data;
+};
+
+export const updateAddress = async (
+  id: string,
+  address: Partial<Address>,
+): Promise<{ success: boolean; addresses: Address[] }> => {
+  const response = await axios.put(
+    `${VITE_API_URL}/users/address/${id}`,
+    address,
+  );
+  return response.data;
+};
+
+export const deleteAddress = async (
+  id: string,
+): Promise<{ success: boolean; addresses: Address[] }> => {
+  const response = await axios.delete(`${VITE_API_URL}/users/address/${id}`);
+  return response.data;
+};
+
+export const setDefaultAddress = async (
+  id: string,
+): Promise<{ success: boolean; addresses: Address[] }> => {
+  const response = await axios.put(
+    `${VITE_API_URL}/users/address/${id}/default`,
   );
   return response.data;
 };
@@ -484,6 +530,8 @@ export const deleteBanner = async (
 export const toggleBannerVisibility = async (
   id: string,
 ): Promise<{ success: boolean; banner: Banner }> => {
-  const response = await axios.put(`${VITE_API_URL}/banners/admin/${id}/toggle`);
+  const response = await axios.put(
+    `${VITE_API_URL}/banners/admin/${id}/toggle`,
+  );
   return response.data;
 };

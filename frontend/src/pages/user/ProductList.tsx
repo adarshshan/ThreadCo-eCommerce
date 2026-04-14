@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Product } from "../../types/Product";
 import {
   getProducts,
@@ -8,7 +7,6 @@ import {
 } from "../../services/api";
 import type { ProductFilters } from "../../services/api";
 import ProductCard from "../../components/ProductCard";
-import Pagination from "../../components/Pagination";
 import {
   Drawer,
   Slider,
@@ -26,6 +24,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useNavigate } from "react-router-dom";
+import { cn } from "../../utils/cn";
 
 const SearchContainer = styled("div")(({ theme }) => ({
   position: "relative",
@@ -80,7 +79,10 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 const ProductList: React.FC = () => {
-  const [filters, setFilters] = useState<ProductFilters>({});
+  const [filters, setFilters] = useState<ProductFilters>({
+    page: 1,
+    limit: 12,
+  });
   const [categories, setCategories] = useState<any[]>([]);
   const [priceRange, setPriceRange] = useState<number[]>([0, 1000]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -94,6 +96,30 @@ const ProductList: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Infinite Scroll States
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  const lastElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isLoading || isFetchingMore) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setFilters((prev) => ({ ...prev, page: (prev.page || 1) + 1 }));
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, isFetchingMore, hasMore],
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -111,6 +137,35 @@ const ProductList: React.FC = () => {
     fetchCats();
   }, []);
 
+  // Main fetch effect
+  useEffect(() => {
+    const fetchProductsData = async () => {
+      try {
+        if (filters.page === 1) setIsLoading(true);
+        else setIsFetchingMore(true);
+
+        setIsError(false);
+        const data = await getProducts(filters);
+
+        if (filters.page === 1) {
+          setProducts(data.products);
+        } else {
+          setProducts((prev) => [...prev, ...data.products]);
+        }
+
+        setHasMore(data?.hasMore);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingMore(false);
+      }
+    };
+
+    fetchProductsData();
+  }, [filters]);
+
   // Debounce logic for suggestions and main filter
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,6 +177,7 @@ const ProductList: React.FC = () => {
 
       setFilters((prev) => ({
         ...prev,
+        page: 1,
         search: searchQuery.trim() || undefined,
       }));
     }, 400);
@@ -156,20 +212,6 @@ const ProductList: React.FC = () => {
     }
   };
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["products", filters],
-    queryFn: () => getProducts(filters),
-  });
-
-  const products = data?.products || [];
-  const totalPages = data?.totalPages || 0;
-  const currentPage = data?.currentPage || 1;
-
-  const handlePageChange = (newPage: number) => {
-    setFilters((prev) => ({ ...prev, page: newPage }));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   const handlePriceChange = (_event: Event, newValue: number | number[]) => {
     setPriceRange(newValue as number[]);
   };
@@ -177,6 +219,7 @@ const ProductList: React.FC = () => {
   const applyFilters = () => {
     setFilters((prev) => ({
       ...prev,
+      page: 1,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],
       search: searchQuery || undefined,
@@ -187,6 +230,7 @@ const ProductList: React.FC = () => {
   const handleCategoryChange = (category: string) => {
     setFilters((prev) => ({
       ...prev,
+      page: 1,
       category: category === "All" ? undefined : category,
     }));
   };
@@ -194,6 +238,7 @@ const ProductList: React.FC = () => {
   const handleSortChange = (event: any) => {
     setFilters((prev) => ({
       ...prev,
+      page: 1,
       sort: event.target.value,
     }));
   };
@@ -296,7 +341,7 @@ const ProductList: React.FC = () => {
     <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[5rem] transition-colors">
       <div className="container-custom py-2 sm:py-8">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-serif font-black mb-2 text-text-primary">
               Our Collection
@@ -408,9 +453,7 @@ const ProductList: React.FC = () => {
                             <div
                               key={cat?.slug}
                               onClick={() => {
-                                handleCategoryChange(cat?.slug); // Assuming slug can be used as category filter or we need _id
-                                // If categories filter uses _id, we might need to find the category object first
-                                // For now, setting it via slug if API supports it, or finding it in categories state
+                                handleCategoryChange(cat?.slug);
                                 const categoryObj = categories?.find(
                                   (c) => c?.slug === cat?.slug,
                                 );
@@ -458,10 +501,9 @@ const ProductList: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Mobile Filter Toggle */}
               <button
                 onClick={() => setMobileOpen(true)}
-                className="md:hidden btn-secondary px-4 py-2.5 flex items-center justify-center gap-2 border border-border rounded-md text-text-primary opacity-80 hover:opacity-95"
+                className="hidden md:flex btn-secondary px-4 py-2.5 items-center justify-center gap-2 border border-border rounded-md text-text-primary opacity-80 hover:opacity-95"
               >
                 <FilterListIcon fontSize="small" />
                 Filters
@@ -489,6 +531,37 @@ const ProductList: React.FC = () => {
                 </FormControl>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Category Pills (Mobile Only) */}
+        <div className="md:hidden mb-8 overflow-hidden">
+          <div className="flex overflow-x-auto gap-2 scrollbar-hide pb-2 scroll-smooth">
+            <button
+              onClick={() => handleCategoryChange("All")}
+              className={cn(
+                "px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap border",
+                !filters?.category
+                  ? "bg-text-primary text-text-inverse border-text-primary shadow-md active:scale-95"
+                  : "bg-surface text-text-secondary border-border hover:border-accent/50",
+              )}
+            >
+              All Categories
+            </button>
+            {categories?.map((cat) => (
+              <button
+                key={cat?._id}
+                onClick={() => handleCategoryChange(cat?._id)}
+                className={cn(
+                  "px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap border",
+                  filters?.category === cat?._id
+                    ? "bg-text-primary text-text-inverse border-text-primary shadow-md active:scale-95"
+                    : "bg-surface text-text-secondary border-border hover:border-accent/50",
+                )}
+              >
+                {cat?.name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -548,11 +621,21 @@ const ProductList: React.FC = () => {
                     <ProductCard key={product?._id} product={product} />
                   ))}
                 </div>
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+
+                {/* Sentinel for Infinite Scroll */}
+                <div
+                  ref={lastElementRef}
+                  className="h-20 flex items-center justify-center mt-8"
+                >
+                  {isFetchingMore && (
+                    <CircularProgress size={24} className="!text-accent" />
+                  )}
+                  {!hasMore && products.length > 0 && (
+                    <p className="text-text-muted text-sm font-bold uppercase tracking-widest">
+                      You've reached the end
+                    </p>
+                  )}
+                </div>
               </>
             ) : (
               <div className="text-center py-32 bg-surface rounded-xl border border-border border-dashed">
@@ -561,7 +644,7 @@ const ProductList: React.FC = () => {
                 </p>
                 <button
                   onClick={() => {
-                    setFilters({});
+                    setFilters({ page: 1, limit: 12 });
                     setSearchQuery("");
                     setPriceRange([0, 1000]);
                   }}

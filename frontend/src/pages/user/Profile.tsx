@@ -9,6 +9,7 @@ import {
   AdminPanelSettings as AdminIcon,
   ExitToApp as LogoutIcon,
   ChevronRight as ChevronRightIcon,
+  LocationOn as LocationIcon,
 } from "@mui/icons-material";
 
 const Profile: React.FC = () => {
@@ -34,6 +35,13 @@ const Profile: React.FC = () => {
       path: "/wishlist",
       description: "Manage items you've saved for later",
       badge: wishlist.length > 0 ? wishlist.length : null,
+    },
+    {
+      label: "Saved Addresses",
+      icon: <LocationIcon className="text-purple-500" />,
+      path: "/addresses",
+      description: "Manage your delivery addresses",
+      requiresAuth: true,
     },
     {
       label: "Returns & Exchanges",

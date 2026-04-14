@@ -17,6 +17,7 @@ const ContactUs = lazy(() => import("./pages/user/ContactUs"));
 const Wishlist = lazy(() => import("./pages/user/Wishlist"));
 const ReturnAndExchange = lazy(() => import("./pages/user/ReturnAndExchange"));
 const Profile = lazy(() => import("./pages/user/Profile"));
+const Addresses = lazy(() => import("./pages/user/Addresses"));
 
 // Admin pages
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
@@ -139,6 +140,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<Loading />}>
                 <OrderDetails />
+              </Suspense>
+            ),
+          },
+          {
+            path: "/addresses",
+            element: (
+              <Suspense fallback={<Loading />}>
+                <Addresses />
               </Suspense>
             ),
           },

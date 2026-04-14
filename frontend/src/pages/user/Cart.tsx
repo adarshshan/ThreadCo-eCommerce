@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useStore } from "../../store/useStore";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -7,7 +7,11 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CustomButton from "../../components/CustomButton";
+import { getAddresses, validatePincode } from "../../services/api";
+import type { Address } from "../../types/User";
+import { cn } from "../../utils/cn";
 
 interface CartItemProps {
   item: any;
@@ -25,7 +29,7 @@ const CartItem: React.FC<CartItemProps> = React.memo(
     return (
       <div className="card bg-surface p-4 sm:p-6 flex flex-col sm:flex-row sm:row gap-6 items-start sm:items-center group hover:border-border-light transition-all">
         {/* Product Image */}
-        <div className="w-full sm:w-32 h-32 sm:h-36 flex-shrink-0 bg-surface-light rounded-lg overflow-hidden">
+        <div className="w-full sm:w-32 h-32 sm:h-36 flex-shrink-0 bg-surface-light rounded-lg overflow-hidden border border-border">
           {item?.images && item?.images?.length > 0 ? (
             <img
               src={item?.images[0]?.url}
@@ -46,7 +50,7 @@ const CartItem: React.FC<CartItemProps> = React.memo(
             <h3 className="text-lg font-bold text-text-primary truncate pr-4">
               <Link
                 to={`/product/${item?._id}`}
-                className="hover:text-accent transition-colors"
+                className="hover:text-accent transition-colors capitalize"
               >
                 {item?.name}
               </Link>
@@ -68,15 +72,13 @@ const CartItem: React.FC<CartItemProps> = React.memo(
 
           <div className="flex flex-wrap gap-4 text-sm text-text-secondary mb-4">
             {item?.selectedSize && (
-              <span className="bg-surface-light px-2 py-1 rounded border border-border">
+              <span className="bg-surface-light px-2.5 py-1 rounded-md border border-border text-xs font-medium">
                 Size:{" "}
-                <span className="text-text-primary font-medium">
-                  {item?.selectedSize}
-                </span>
+                <span className="text-text-primary">{item?.selectedSize}</span>
               </span>
             )}
             {item?.selectedColor && (
-              <span className="bg-surface-light px-2 py-1 rounded border border-border flex items-center gap-2">
+              <span className="bg-surface-light px-2.5 py-1 rounded-md border border-border flex items-center gap-2 text-xs font-medium">
                 Color:{" "}
                 <span
                   className="w-3 h-3 rounded-full border border-border"
@@ -88,9 +90,9 @@ const CartItem: React.FC<CartItemProps> = React.memo(
 
           <div className="w-full flex justify-between items-center md:items-end">
             {/* Quantity Controls */}
-            <div className="flex items-center bg-surface-light rounded-lg border border-border">
+            <div className="flex items-center bg-surface-light rounded-xl border border-border overflow-hidden">
               <button
-                className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-l-lg transition-colors"
+                className="p-2.5 text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-30"
                 onClick={() =>
                   updateQuantity(
                     item?._id,
@@ -103,11 +105,11 @@ const CartItem: React.FC<CartItemProps> = React.memo(
               >
                 <RemoveIcon fontSize="small" />
               </button>
-              <span className="w-10 text-center font-bold text-text-primary">
+              <span className="w-10 text-center font-bold text-text-primary text-sm">
                 {item?.quantity}
               </span>
               <button
-                className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-r-lg transition-colors"
+                className="p-2.5 text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
                 onClick={() =>
                   updateQuantity(
                     item?._id,
@@ -121,7 +123,7 @@ const CartItem: React.FC<CartItemProps> = React.memo(
               </button>
             </div>
 
-            <p className="text-xl font-bold text-accent">
+            <p className="text-xl font-black text-accent">
               ₹{(item?.price * item?.quantity).toFixed(2)}
             </p>
           </div>
@@ -135,8 +137,97 @@ const Cart: React.FC = () => {
   const cart = useStore((state) => state.cart);
   const removeFromCart = useStore((state) => state.removeFromCart);
   const updateQuantity = useStore((state) => state.updateQuantity);
+  const user = useStore((state) => state.user);
 
   const navigate = useNavigate();
+
+  // Shipping & Delivery States
+  const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
+  const [shippingDetails, setShippingDetails] = useState<{
+    loading: boolean;
+    deliveryCharge: number;
+    estimatedDelivery?: string;
+    message?: string;
+    valid: boolean;
+  }>({
+    loading: false,
+    deliveryCharge: 0,
+    valid: false,
+  });
+
+  // Fetch default address
+  const fetchDefaultAddress = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await getAddresses();
+      if (data.success) {
+        const defaultAddr = data.addresses.find((a: Address) => a.isDefault);
+        setDefaultAddress(defaultAddr || null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch addresses:", error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchDefaultAddress();
+  }, [fetchDefaultAddress]);
+
+  // Recalculate shipping whenever cart or defaultAddress changes
+  useEffect(() => {
+    if (defaultAddress?.postalCode && cart.length > 0) {
+      const calculateShipping = async () => {
+        try {
+          setShippingDetails((prev) => ({
+            ...prev,
+            loading: true,
+            message: "",
+          }));
+          const data = await validatePincode(
+            defaultAddress.postalCode,
+            cart.map((item) => ({
+              productId: item._id,
+              quantity: item.quantity,
+            })),
+          );
+
+          if (data.success) {
+            setShippingDetails({
+              loading: false,
+              deliveryCharge: data.deliveryCharge,
+              estimatedDelivery: data.estimatedDeliveryDate,
+              valid: true,
+              message: "",
+            });
+          } else {
+            setShippingDetails({
+              loading: false,
+              deliveryCharge: 0,
+              valid: false,
+              message: data.message || "Not serviceable",
+            });
+          }
+        } catch (error) {
+          setShippingDetails({
+            loading: false,
+            deliveryCharge: 0,
+            valid: false,
+            message: "Failed to calculate shipping",
+          });
+        }
+      };
+      calculateShipping();
+    } else {
+      setShippingDetails({
+        loading: false,
+        deliveryCharge: 0,
+        valid: false,
+        message: defaultAddress
+          ? ""
+          : "Add a default address to calculate delivery",
+      });
+    }
+  }, [cart, defaultAddress]);
 
   useEffect(() => {
     const currentPath = window.location.pathname + window.location.search;
@@ -144,12 +235,13 @@ const Cart: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
 
+  const totalPayable = subtotal + shippingDetails.deliveryCharge;
+
   const handleCheckout = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "null");
     if (!user) {
       navigate("/login");
     } else {
@@ -159,15 +251,15 @@ const Cart: React.FC = () => {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-background pt-20 pb-20 px-[1rem] sm:px-[5rem]">
-        <div className="container-custom text-center">
-          <div className="bg-surface/50 p-12 rounded-2xl border border-border max-w-lg mx-auto backdrop-blur-sm">
-            <div className="bg-surface-light w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-screen bg-background pt-20 pb-20 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="bg-surface p-12 rounded-3xl border border-border max-w-lg mx-auto shadow-sm">
+            <div className="bg-background w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
               <ShoppingBagIcon
                 sx={{ fontSize: 40, color: "var(--color-text-muted)" }}
               />
             </div>
-            <h2 className="text-3xl font-serif font-bold text-text-primary mb-4">
+            <h2 className="text-3xl font-serif font-black text-text-primary mb-4">
               Your cart is empty
             </h2>
             <p className="text-text-secondary mb-8 text-lg">
@@ -175,7 +267,7 @@ const Cart: React.FC = () => {
             </p>
             <Link
               to="/products"
-              className="border border-border btn-primary inline-flex gap-2 items-center text-text-primary p-2 px-3 rounded-md"
+              className="bg-accent text-text-inverse px-8 py-3 rounded-xl font-bold transition-all hover:opacity-90 inline-block shadow-lg shadow-accent/20"
             >
               Start Shopping
             </Link>
@@ -186,15 +278,15 @@ const Cart: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-3 sm:py-12 px-[1rem] lg:px-[8rem] xl:px-[20rem]">
-      <div className="container-custom">
-        <h1 className="text-3xl md:text-4xl font-serif font-black text-text-primary sm:mb-8">
+    <div className="min-h-screen bg-background pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <h1 className="text-3xl md:text-4xl font-serif font-black text-text-primary mb-8 md:mb-12">
           Shopping Cart
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Cart Items List */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-8 space-y-4">
             {cart.map((item) => (
               <CartItem
                 key={`${item?._id}-${item?.selectedSize}-${item?.selectedColor}`}
@@ -206,7 +298,7 @@ const Cart: React.FC = () => {
 
             <button
               onClick={() => navigate("/products")}
-              className="hidden sm:inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mt-4"
+              className="flex items-center gap-2 text-text-secondary hover:text-accent transition-colors mt-6 font-bold uppercase tracking-wider text-xs"
             >
               <ArrowBackIcon fontSize="small" />
               Continue Shopping
@@ -214,50 +306,140 @@ const Cart: React.FC = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="card bg-surface px-6 sm:p-6 sticky top-24">
-              <h3 className="text-xl font-bold text-text-primary mb-6 pb-4 border-b border-border">
-                Order Summary
-              </h3>
+          <div className="lg:col-span-4">
+            <div className="space-y-6 sticky top-24">
+              {/* Delivery info card */}
+              <div className="bg-surface rounded-2xl p-6 border border-border shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <LocationOnIcon className="text-accent" fontSize="small" />
+                  <h4 className="font-bold text-text-primary">
+                    Delivery Address
+                  </h4>
+                </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-text-secondary">
-                  <span>Subtotal</span>
-                  <span className="text-text-primary font-medium">
-                    ₹{total?.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-text-secondary">
-                  <span>Shipping</span>
-                  <span className="text-success font-medium">Free</span>
-                </div>
-                <div className="flex justify-between text-text-secondary">
-                  <span>Tax</span>
-                  <span className="text-text-primary font-medium">₹0.00</span>
-                </div>
+                {defaultAddress ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-bold text-text-primary truncate">
+                      Deliver to: {defaultAddress.fullName}
+                    </p>
+                    <p className="text-xs text-text-secondary line-clamp-1">
+                      {defaultAddress.addressLine1}, {defaultAddress.city} -{" "}
+                      {defaultAddress.postalCode}
+                    </p>
+                    <Link
+                      to="/addresses"
+                      className="text-xs font-bold text-accent hover:underline inline-block mt-1"
+                    >
+                      Change Address
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-text-secondary">
+                      {user
+                        ? "Set a default address to calculate shipping"
+                        : "Login to see delivery charges"}
+                    </p>
+                    <Link
+                      to={user ? "/addresses" : "/login"}
+                      className="text-xs font-bold text-accent border border-accent/20 px-3 py-1.5 rounded-lg hover:bg-accent/5 transition-colors inline-block"
+                    >
+                      {user ? "Manage Addresses" : "Login Now"}
+                    </Link>
+                  </div>
+                )}
               </div>
 
-              <div className="border-t border-border pt-4 mb-8">
-                <div className="flex justify-between items-end">
-                  <span className="text-lg font-bold text-text-primary">
-                    Total
-                  </span>
-                  <span className="text-3xl font-black text-accent">
-                    ₹{total?.toFixed(2)}
-                  </span>
+              {/* Summary card */}
+              <div className="bg-surface rounded-2xl p-6 border border-border shadow-sm">
+                <h3 className="text-xl font-bold text-text-primary mb-6 border-b border-border pb-4">
+                  Order Summary
+                </h3>
+
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between text-sm text-text-secondary">
+                    <span>Subtotal</span>
+                    <span className="text-text-primary font-bold">
+                      ₹{subtotal.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-text-secondary">
+                    <span>Delivery Charges</span>
+                    {shippingDetails.loading ? (
+                      <span className="text-accent text-xs animate-pulse font-medium">
+                        Calculating...
+                      </span>
+                    ) : (
+                      <span
+                        className={cn(
+                          "font-bold",
+                          shippingDetails.deliveryCharge === 0
+                            ? "text-success"
+                            : "text-text-primary",
+                        )}
+                      >
+                        {shippingDetails.valid
+                          ? shippingDetails.deliveryCharge === 0
+                            ? "FREE"
+                            : `₹${shippingDetails.deliveryCharge.toFixed(2)}`
+                          : "—"}
+                      </span>
+                    )}
+                  </div>
+
+                  {shippingDetails.message && (
+                    <p className="text-[10px] text-error font-medium">
+                      {shippingDetails.message}
+                    </p>
+                  )}
+
+                  <div className="flex justify-between text-sm text-text-secondary border-t border-border pt-4">
+                    <span>Tax (GST)</span>
+                    <span className="text-text-primary font-medium">
+                      Included
+                    </span>
+                  </div>
                 </div>
+
+                {shippingDetails.valid && shippingDetails.estimatedDelivery && (
+                  <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 mb-6">
+                    <p className="text-xs text-accent font-medium text-center">
+                      🚚 Estimated Delivery:{" "}
+                      <span className="font-bold">
+                        {new Date(
+                          shippingDetails.estimatedDelivery,
+                        ).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                <div className="border-t border-border pt-4 mb-8">
+                  <div className="flex justify-between items-end">
+                    <span className="text-lg font-bold text-text-primary">
+                      Total
+                    </span>
+                    <span className="text-3xl font-black text-accent">
+                      ₹{totalPayable.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <CustomButton
+                  onclick={handleCheckout}
+                  className="bg-accent text-text-inverse w-full py-4 rounded-xl font-bold shadow-lg shadow-accent/20 hover:opacity-90 transition-all active:scale-[0.98] animate-pulse hover:animate-none"
+                >
+                  Proceed to Checkout
+                </CustomButton>
+
+                <p className="text-center text-[10px] text-text-muted mt-6 uppercase tracking-[0.2em] font-bold">
+                  Secure Payment Gateway
+                </p>
               </div>
-
-              <CustomButton
-                onclick={handleCheckout}
-                className="btn-primary border border-border sm:opacity-70 hover:opacity-95 font-semibold w-full py-4 text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all text-text-primary"
-              >
-                Proceed to Checkout
-              </CustomButton>
-
-              <p className="text-center text-xs text-text-muted mt-4">
-                Secure Checkout - 100% Satisfaction Guaranteed
-              </p>
             </div>
           </div>
         </div>
