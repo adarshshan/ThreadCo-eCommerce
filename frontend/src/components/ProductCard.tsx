@@ -83,6 +83,10 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product }) => {
           <span className="text-[.7rem] absolute top-3 left-3 badge bg-error text-white border-none shadow-lg px-2 rounded-2xl z-10">
             Out of Stock
           </span>
+        ) : product?.categories && product?.categories?.length > 0 ? (
+          <span className="text-[.7rem] absolute top-3 left-3 badge bg-accent text-text-inverse border-none shadow-lg px-2 rounded-2xl z-10">
+            {product?.categories?.[0]?.name}
+          </span>
         ) : product?.category ? (
           <span className="text-[.7rem] absolute top-3 left-3 badge bg-accent text-text-inverse border-none shadow-lg px-2 rounded-2xl z-10">
             {typeof product?.category === "object"

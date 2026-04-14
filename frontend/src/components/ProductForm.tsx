@@ -11,6 +11,11 @@ import {
   FormGroup,
   Switch,
   MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Chip,
+  OutlinedInput,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import type { Product, ProductSize, ProductImage } from "../types/Product";
@@ -34,8 +39,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [name, setName] = useState<string>("");
   const [price, setPrice] = useState<number | null>(null);
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<any[]>([]);
   const [sellerId, setSellerId] = useState("");
   const [sellers, setSellers] = useState<any[]>([]);
   const [stock, setStock] = useState<number>(0);
@@ -54,7 +59,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           getCategories("Active"),
           getSellers(),
         ]);
-        setCategories(catsData);
+        setAvailableCategories(catsData);
         if (sellersData.success) {
           setSellers(sellersData.sellers);
         }
@@ -69,15 +74,26 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setPrice(product?.price);
       setDescription(product?.description ?? "");
 
-      const categoryId =
-        typeof product?.category === "object"
-          ? (product?.category as any)?._id
-          : (product?.category ?? "");
-      setCategory(categoryId);
+      // Handle multiple categories
+      if (product?.categories && Array.isArray(product?.categories)) {
+        setSelectedCategoryIds(
+          product?.categories?.map((cat: any) =>
+            typeof cat === "object" ? cat?._id : cat,
+          ),
+        );
+      } else if (product.category) {
+        const categoryId =
+          typeof product?.category === "object"
+            ? (product?.category as any)?._id
+            : product?.category;
+        setSelectedCategoryIds([categoryId]);
+      } else {
+        setSelectedCategoryIds([]);
+      }
 
       const sellerIdStr =
         typeof product?.sellerId === "object"
-          ? (product.sellerId as any)?._id
+          ? (product?.sellerId as any)?._id
           : (product?.sellerId ?? "");
       setSellerId(sellerIdStr);
 
@@ -85,19 +101,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setWeight(product?.weight ?? 500);
       setHasSizes(product?.hasSizes ?? false);
 
-      // Normalize sizes: Handle old string array and new object array
-      const normalizedSizes = (product?.sizes ?? []).map((s: any) => {
+      const normalizedSizes = (product?.sizes ?? [])?.map((s: any) => {
         if (typeof s === "string") return { size: s, stock: 0 };
-        return { size: s.size, stock: s.stock ?? 0 };
+        return { size: s?.size, stock: s?.stock ?? 0 };
       });
       setSelectedSizes(normalizedSizes);
 
-      setImages(product.images ?? []);
+      setImages(product?.images ?? []);
     } else {
       setName("");
       setPrice(null);
       setDescription("");
-      setCategory("");
+      setSelectedCategoryIds([]);
       setSellerId("");
       setStock(0);
       setHasSizes(false);
@@ -106,13 +121,21 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [product]);
 
+  const handleCategoryChange = (event: any) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedCategoryIds(
+      typeof value === "string" ? value.split(",") : value,
+    );
+  };
+
   const handleSizeToggle = (size: string) => {
     setSelectedSizes((prev) => {
       const exists = prev.find((s) => s.size === size);
       if (exists) {
         return prev.filter((s) => s.size !== size);
       } else {
-        // Use explicit key mapping to avoid property index issues
         return [...prev, { size: size, stock: 0 }];
       }
     });
@@ -173,18 +196,23 @@ const ProductForm: React.FC<ProductFormProps> = ({
       return;
     }
 
+    if (selectedCategoryIds.length === 0) {
+      setPicMessage("Please select at least one category.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("price", price ? price.toString() : "0");
     formData.append("description", description);
-    formData.append("category", category);
+    formData.append("categories", JSON.stringify(selectedCategoryIds));
     formData.append("sellerId", sellerId);
     formData.append("weight", weight.toString());
     formData.append("hasSizes", hasSizes.toString());
 
     if (hasSizes) {
       formData.append("sizes", JSON.stringify(selectedSizes));
-      formData.append("stock", "0"); // Reset global stock if sizes are used
+      formData.append("stock", "0");
     } else {
       formData.append("stock", stock ? stock.toString() : "0");
       formData.append("sizes", "[]");
@@ -192,7 +220,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
     if (images.length > 0) {
       try {
-        // Separate existing image objects from new File objects
         const existingImages = images.filter(
           (img): img is ProductImage =>
             typeof img === "object" && img !== null && "url" in img,
@@ -201,12 +228,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
           (img): img is File => img instanceof File,
         );
 
-        // Upload only the new files
         const newImageObjects = await Promise.all(
           newImageFiles.map((file) => uploadImage(file)),
         );
 
-        // Combine old and new image objects
         const allImages = [...existingImages, ...newImageObjects];
 
         if (allImages?.length > 0)
@@ -231,7 +256,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <Paper
       elevation={3}
-      className="w-full max-h-[90vh] overflow-y-scroll  !shadow-none !bg-transparent rounded-xl !text-[var(--color-text-light)] px-5"
+      className="w-full max-h-[90vh] overflow-y-scroll !shadow-none !bg-transparent rounded-xl !text-[var(--color-text-light)] px-5"
     >
       <Typography variant="h5" className="font-bold mb-6 text-center">
         {product ? "Edit Product" : "Add Product"}
@@ -249,9 +274,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
           InputProps={{
             className:
               "!text-[var(--color-text-light)] border border-[var(--color-border)]",
-          }}
-          InputLabelProps={{
-            className: "",
           }}
         />
         <div className="flex gap-4 items-center">
@@ -347,28 +369,63 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </div>
           </Box>
         )}
-        <div className="flex gap-4">
-          <TextField
-            id="category"
-            select
-            label="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            variant="outlined"
-            fullWidth
-            required
-            className="rounded-md"
-            InputProps={{
-              className:
-                "!text-[var(--color-text-light)] border border-[var(--color-border)]",
-            }}
-          >
-            {categories.map((cat) => (
-              <MenuItem key={cat._id} value={cat._id}>
-                {cat.name}
-              </MenuItem>
-            ))}
-          </TextField>
+
+        <div className="flex flex-col gap-4">
+          <FormControl fullWidth required>
+            <InputLabel
+              id="categories-label"
+              className="!text-[var(--color-text-muted)]"
+            >
+              Categories
+            </InputLabel>
+            <Select
+              labelId="categories-label"
+              id="categories"
+              multiple
+              value={selectedCategoryIds}
+              onChange={handleCategoryChange}
+              input={
+                <OutlinedInput
+                  label="Categories"
+                  className="!text-[var(--color-text-light)] border border-[var(--color-border)]"
+                />
+              }
+              renderValue={(selected) => (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                  {selected?.map((value) => {
+                    const cat = availableCategories.find(
+                      (c) => c._id === value,
+                    );
+                    return (
+                      <Chip
+                        key={value}
+                        label={cat?.name || value}
+                        size="small"
+                        className="!bg-accent/20 !text-accent font-bold"
+                      />
+                    );
+                  })}
+                </Box>
+              )}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    bgcolor: "var(--color-surface)",
+                    color: "var(--color-text-light)",
+                  },
+                },
+              }}
+            >
+              {availableCategories?.map((cat) => (
+                <MenuItem key={cat?._id} value={cat?._id}>
+                  <Checkbox
+                    checked={selectedCategoryIds.indexOf(cat?._id) > -1}
+                  />
+                  {cat?.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <TextField
             id="seller"
@@ -387,9 +444,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <MenuItem value="">
               <em>None (Admin)</em>
             </MenuItem>
-            {sellers.map((seller) => (
-              <MenuItem key={seller._id} value={seller._id}>
-                {seller.name} ({seller.email})
+            {sellers?.map((seller) => (
+              <MenuItem key={seller?._id} value={seller?._id}>
+                {seller?.name} ({seller?.email})
               </MenuItem>
             ))}
           </TextField>

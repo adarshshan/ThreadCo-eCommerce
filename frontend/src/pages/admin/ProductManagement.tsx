@@ -149,9 +149,7 @@ const ProductManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium">
-                      {typeof product?.category === "object"
-                        ? product?.category?.name
-                        : "Uncategorized"}
+                      {product?.categories?.[0]?.name ?? "Uncategorized"}
                     </div>
                   </td>
 

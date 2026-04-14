@@ -3,6 +3,7 @@ import { ProductDocument, ProductModel } from "../models/productsSchema";
 
 export interface ProductFilters {
   category?: string;
+  categories?: string[];
   minPrice?: number;
   maxPrice?: number;
   search?: string;
@@ -54,18 +55,18 @@ export class ProductRepository implements IProductRepository {
     limit: number = 10,
   ): Promise<ProductDocument[]> {
     const product = await ProductModel.findById(productId)
-      .select("category")
+      .select("categories")
       .lean();
-    if (!product) return [];
+    if (!product || !product.categories || product.categories.length === 0) return [];
 
     const products = await ProductModel.find({
-      category: product.category,
+      categories: { $in: product.categories },
       _id: { $ne: productId },
       isActive: true,
     })
       .limit(limit)
-      .populate("category", "name")
-      .select("name price images category stock hasSizes sizes")
+      .populate("categories", "name")
+      .select("name price images categories stock hasSizes sizes")
       .lean()
       .exec();
 
@@ -74,10 +75,15 @@ export class ProductRepository implements IProductRepository {
     ).filter(Boolean);
   }
 
-  async countAll(filters: ProductFilters = {}): Promise<number> {
+  private buildQuery(filters: ProductFilters = {}): any {
     const query: any = { isActive: true };
 
-    if (filters.category) query.category = filters.category;
+    if (filters.categories && filters.categories.length > 0) {
+      query.categories = { $in: filters.categories };
+    } else if (filters.category) {
+      query.categories = { $in: [filters.category] };
+    }
+
     if (filters.sellerId) query.sellerId = filters.sellerId;
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
       query.price = {};
@@ -86,22 +92,18 @@ export class ProductRepository implements IProductRepository {
     }
     if (filters.search) query.$text = { $search: filters.search };
 
+    return query;
+  }
+
+  async countAll(filters: ProductFilters = {}): Promise<number> {
+    const query = this.buildQuery(filters);
     return await ProductModel.countDocuments(query);
   }
 
   async findAll(
     filters: ProductFilters = {},
   ): Promise<{ products: ProductDocument[]; totalItems: number }> {
-    const query: any = { isActive: true };
-
-    if (filters.category) query.category = filters.category;
-    if (filters.sellerId) query.sellerId = filters.sellerId;
-    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      query.price = {};
-      if (filters.minPrice !== undefined) query.price.$gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) query.price.$lte = filters.maxPrice;
-    }
-    if (filters.search) query.$text = { $search: filters.search };
+    const query = this.buildQuery(filters);
 
     let sortOption: any = { createdAt: -1 };
     if (filters.sort) {
@@ -121,10 +123,10 @@ export class ProductRepository implements IProductRepository {
     const totalItems = await ProductModel.countDocuments(query);
 
     const findQuery = ProductModel.find(query)
-      .populate("category", "name")
+      .populate("categories", "name")
       .populate("sellerId", "name email")
       .select(
-        "_id name price images category stock hasSizes sizes sellerId weight description",
+        "_id name price images categories stock hasSizes sizes sellerId weight description",
       )
       .sort(sortOption)
       .lean();
@@ -147,7 +149,7 @@ export class ProductRepository implements IProductRepository {
   async findById(id: string): Promise<ProductDocument | null> {
     try {
       const product = await ProductModel.findById(id)
-        .populate("category", "name")
+        .populate("categories", "name")
         .lean()
         .exec();
       return this.normalizeProduct(product);
@@ -165,7 +167,7 @@ export class ProductRepository implements IProductRepository {
   async create(product: ProductDocument): Promise<ProductDocument> {
     const newProduct = new ProductModel(product);
     const savedProduct = await newProduct.save();
-    const populatedProduct = await savedProduct.populate("category");
+    const populatedProduct = await savedProduct.populate("categories");
     return this.normalizeProduct(
       populatedProduct.toObject(),
     ) as ProductDocument;
@@ -176,33 +178,26 @@ export class ProductRepository implements IProductRepository {
     productData: Partial<ProductDocument>,
   ): Promise<ProductDocument | null> {
     try {
-      console.log("Repository updating product with ID:", id);
-      console.log("Repository update data:", productData);
-
       const updatedProduct = await ProductModel.findByIdAndUpdate(
         id,
         { $set: productData },
         { new: true },
       )
-        .populate("category")
+        .populate("categories")
         .lean()
         .exec();
 
       if (!updatedProduct) {
-        console.log("No product found in DB for ID:", id);
         return null;
-      } else {
-        console.log("Product updated successfully in DB");
       }
 
       return this.normalizeProduct(updatedProduct);
     } catch (error) {
-      console.error("Error in Repository update:", error);
       if (
         error instanceof Error &&
         error.message.includes("Cast to ObjectId failed")
       ) {
-        return null; // Handle invalid ObjectId gracefully
+        return null;
       }
       throw error;
     }
@@ -217,7 +212,7 @@ export class ProductRepository implements IProductRepository {
         error instanceof Error &&
         error.message.includes("Cast to ObjectId failed")
       ) {
-        return false; // Handle invalid ObjectId gracefully
+        return false;
       }
       throw error;
     }

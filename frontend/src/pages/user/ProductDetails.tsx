@@ -270,13 +270,41 @@ const ProductDetails: React.FC = () => {
                 <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-black text-text-primary mb-4 leading-tight capitalize">
                   {product?.name}
                 </h1>
-                <div className="flex items-baseline gap-4">
+                <div className="flex items-baseline gap-4 mb-4">
                   <p className="text-2xl sm:text-3xl font-bold text-text-primary">
                     ₹{product?.price.toFixed(2)}
                   </p>
                   <p className="text-text-muted line-through text-lg">
                     ₹{(product?.price * 1.2).toFixed(2)}
                   </p>
+                </div>
+
+                {/* Category Tags */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {product?.categories && Array.isArray(product?.categories) ? (
+                    product?.categories?.map((cat: any) => (
+                      <button
+                        key={cat?._id}
+                        onClick={() =>
+                          navigate(`/products?category=${cat?._id}`)
+                        }
+                        className="px-3 py-1 bg-surface-light border border-border rounded-full text-xs font-bold text-text-secondary hover:text-accent hover:border-accent transition-all uppercase tracking-wider"
+                      >
+                        {cat?.name}
+                      </button>
+                    ))
+                  ) : product?.category ? (
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/products?category=${(product?.category as any)._id}`,
+                        )
+                      }
+                      className="px-3 py-1 bg-surface-light border border-border rounded-full text-xs font-bold text-text-secondary hover:text-accent hover:border-accent transition-all uppercase tracking-wider"
+                    >
+                      {(product?.category as any)?.name}
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
