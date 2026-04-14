@@ -26,6 +26,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useNavigate } from "react-router-dom";
+import { cn } from "../../utils/cn";
 
 const SearchContainer = styled("div")(({ theme }) => ({
   position: "relative",
@@ -296,7 +297,7 @@ const ProductList: React.FC = () => {
     <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[5rem] transition-colors">
       <div className="container-custom py-2 sm:py-8">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-serif font-black mb-2 text-text-primary">
               Our Collection
@@ -458,10 +459,10 @@ const ProductList: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Mobile Filter Toggle */}
+              {/* Desktop Filter Toggle (Hidden on mobile as category pills replace it) */}
               <button
                 onClick={() => setMobileOpen(true)}
-                className="md:hidden btn-secondary px-4 py-2.5 flex items-center justify-center gap-2 border border-border rounded-md text-text-primary opacity-80 hover:opacity-95"
+                className="hidden md:flex btn-secondary px-4 py-2.5 items-center justify-center gap-2 border border-border rounded-md text-text-primary opacity-80 hover:opacity-95"
               >
                 <FilterListIcon fontSize="small" />
                 Filters
@@ -489,6 +490,37 @@ const ProductList: React.FC = () => {
                 </FormControl>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Category Pills (Mobile Only) */}
+        <div className="md:hidden mb-8 overflow-hidden">
+          <div className="flex overflow-x-auto gap-2 scrollbar-hide pb-2 scroll-smooth">
+            <button
+              onClick={() => handleCategoryChange("All")}
+              className={cn(
+                "px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap border",
+                !filters?.category
+                  ? "bg-text-primary text-text-inverse border-text-primary shadow-md active:scale-95"
+                  : "bg-surface text-text-secondary border-border hover:border-accent/50",
+              )}
+            >
+              All Categories
+            </button>
+            {categories?.map((cat) => (
+              <button
+                key={cat?._id}
+                onClick={() => handleCategoryChange(cat?._id)}
+                className={cn(
+                  "px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap border",
+                  filters?.category === cat?._id
+                    ? "bg-text-primary text-text-inverse border-text-primary shadow-md active:scale-95"
+                    : "bg-surface text-text-secondary border-border hover:border-accent/50",
+                )}
+              >
+                {cat?.name}
+              </button>
+            ))}
           </div>
         </div>
 
