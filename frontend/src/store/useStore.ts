@@ -20,6 +20,8 @@ interface StoreState {
   closeAddToCartModal: () => void;
 
   cart: CartItem[];
+  buyNowItem: CartItem | null;
+  setBuyNowItem: (item: CartItem | null) => void;
   addToCart: (
     product: Product,
     quantity?: number,
@@ -82,6 +84,8 @@ export const useStore = create<StoreState>()(
         }),
 
       cart: [],
+      buyNowItem: null,
+      setBuyNowItem: (item) => set({ buyNowItem: item }),
       addToCart: (product, quantity = 1, size, color) => {
         const currentCart = get().cart;
 
@@ -248,6 +252,7 @@ export const useStore = create<StoreState>()(
       partialize: (state) => ({
         user: state.user,
         cart: state.cart,
+        buyNowItem: state.buyNowItem,
         wishlist: state.wishlist,
         theme: state.theme,
       }),

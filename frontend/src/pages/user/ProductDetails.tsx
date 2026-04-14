@@ -9,7 +9,6 @@ import { useStore } from "../../store/useStore";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VerifiedIcon from "@mui/icons-material/Verified";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import HistoryIcon from "@mui/icons-material/History";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Slider from "react-slick";
@@ -17,6 +16,7 @@ import Loading from "../../components/Loading";
 import ProductCarousel from "../../components/ProductCarousel";
 import CustomButton from "../../components/CustomButton";
 import toast from "react-hot-toast";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
 const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "3XL"];
 
@@ -27,6 +27,7 @@ const ProductDetails: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [sizeError, setSizeError] = useState(false);
   const addToCart = useStore((state) => state.addToCart);
+  const setBuyNowItem = useStore((state) => state.setBuyNowItem);
   const openAddToCartModal = useStore((state) => state.openAddToCartModal);
   const wishlist = useStore((state) => state.wishlist);
   const addToWishlist = useStore((state) => state.addToWishlist);
@@ -86,6 +87,35 @@ const ProductDetails: React.FC = () => {
     addToCart(product, 1, selectedSize ?? undefined);
     openAddToCartModal(product, selectedSize);
     toast.success("Added to cart!");
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    if (product?.hasSizes && !selectedSize) {
+      setSizeError(true);
+      toast.error("Please select a size");
+      return;
+    }
+
+    // Stock check
+    if (product?.hasSizes && selectedSize) {
+      const sizeObj = product?.sizes?.find((s) => s.size === selectedSize);
+      if (!sizeObj || sizeObj?.stock <= 0) {
+        toast.error("Size is out of stock");
+        return;
+      }
+    } else if (product?.stock !== undefined && product?.stock <= 0) {
+      toast.error("Product is out of stock");
+      return;
+    }
+
+    setSizeError(false);
+    setBuyNowItem({
+      ...product,
+      quantity: 1,
+      selectedSize: selectedSize ?? undefined,
+    } as any);
+    navigate("/checkout?type=buyNow");
   };
 
   const toggleWishlist = async () => {
@@ -158,7 +188,11 @@ const ProductDetails: React.FC = () => {
                 </div>
 
                 <div className="block sm:hidden">
-                  <ImageSlider images={product?.images}></ImageSlider>
+                  <ImageSlider
+                    images={product?.images}
+                    toggleWishlist={toggleWishlist}
+                    id={product?._id}
+                  />
                 </div>
               </div>
 
@@ -193,7 +227,7 @@ const ProductDetails: React.FC = () => {
                     selectedSize ? (
                       (() => {
                         const sizeStock =
-                          product.sizes?.find((s) => s.size === selectedSize)
+                          product?.sizes?.find((s) => s.size === selectedSize)
                             ?.stock ?? 0;
                         return sizeStock > 0 ? (
                           sizeStock < 5 ? (
@@ -217,7 +251,7 @@ const ProductDetails: React.FC = () => {
                       </span>
                     )
                   ) : product?.stock && product?.stock > 0 ? (
-                    product.stock < 5 ? (
+                    product?.stock < 5 ? (
                       <span className="badge bg-orange-500 text-white border-none text-xs font-bold uppercase tracking-tighter px-2 rounded-md">
                         Only {product?.stock} left
                       </span>
@@ -260,10 +294,10 @@ const ProductDetails: React.FC = () => {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {AVAILABLE_SIZES.map((size) => {
-                      const sizeData = product.sizes?.find(
+                      const sizeData = product?.sizes?.find(
                         (s) => s.size === size,
                       );
-                      const isAvailable = sizeData && sizeData.stock > 0;
+                      const isAvailable = sizeData && sizeData?.stock > 0;
                       const isSelected = selectedSize === size;
 
                       return (
@@ -312,11 +346,11 @@ const ProductDetails: React.FC = () => {
                   Add to Cart
                 </CustomButton>
                 <CustomButton
-                  onclick={toggleWishlist}
-                  className={`${isInWishlist ? "bg-red-500 text-text-primary" : "bg-red-400"} btn-outline btn-lg flex-grow py-2 rounded-md cursor-pointer flex items-center justify-center gap-3 transition-colors`}
+                  onclick={handleBuyNow}
+                  className="bg-accent text-text-inverse btn-lg flex-grow flex items-center justify-center gap-3 py-2 rounded-md cursor-pointer shadow-lg shadow-accent/20"
                 >
-                  <FavoriteIcon />
-                  {isInWishlist ? "In Wishlist" : "Add to Wishlist"}
+                  <ShoppingCartIcon />
+                  Buy Now
                 </CustomButton>
               </div>
 
@@ -328,12 +362,6 @@ const ProductDetails: React.FC = () => {
                     Premium Quality
                   </span>
                 </div>
-                {/* <div className="flex flex-col items-center text-center space-y-2">
-                  <LocalShippingIcon className="text-accent" />
-                  <span className="text-xs font-bold text-text-primary uppercase tracking-tighter">
-                    Free Shipping
-                  </span>
-                </div> */}
                 <div className="flex flex-col items-center text-center space-y-2">
                   <HistoryIcon className="text-accent" />
                   <span className="text-xs font-bold text-text-primary uppercase tracking-tighter">
@@ -369,8 +397,16 @@ export default ProductDetails;
 
 interface ImageSliderInterface {
   images: ProductImage[] | undefined;
+  toggleWishlist: () => Promise<void>;
+  id: string | number;
 }
-const ImageSlider: React.FC<ImageSliderInterface> = ({ images }) => {
+const ImageSlider: React.FC<ImageSliderInterface> = ({
+  images,
+  toggleWishlist,
+  id,
+}) => {
+  const wishlist = useStore((state) => state.wishlist);
+  const isInWishlist = wishlist.some((item) => item?._id === id);
   var settings = {
     dots: true,
     infinite: true,
@@ -384,12 +420,25 @@ const ImageSlider: React.FC<ImageSliderInterface> = ({ images }) => {
         images?.length > 0 &&
         images?.map((item, index) => (
           <Zoom key={index}>
-            <div className="w-full aspect-square flex items-center justify-center bg-surface-light">
+            <div className="relative w-full aspect-square flex items-center justify-center bg-surface-light">
               <img
                 src={item?.url}
                 alt={item?.url}
                 className="w-full h-full object-cover"
               />
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleWishlist();
+                }}
+                className="absolute top-3 right-3 p-2 sm:p-2 rounded-full bg-surface/20 backdrop-blur-md border border-border/20 text-text-primary hover:bg-surface hover:text-error transition-all duration-300 z-10"
+              >
+                {isInWishlist ? (
+                  <FavoriteIcon fontSize="medium" className="text-error" />
+                ) : (
+                  <FavoriteBorderIcon fontSize="small" />
+                )}
+              </button>
             </div>
           </Zoom>
         ))}

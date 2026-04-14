@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   getAddresses,
   addAddress,
@@ -14,14 +14,17 @@ import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HomeIcon from "@mui/icons-material/Home";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import CustomModal from "../../components/Modal";
 import { cn } from "../../utils/cn";
 
 const Addresses: React.FC = () => {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+
   const [formData, setFormData] = useState<Partial<Address>>({
     fullName: "",
     phone: "",
@@ -34,11 +37,7 @@ const Addresses: React.FC = () => {
     isDefault: false,
   });
 
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
-
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getAddresses();
@@ -50,9 +49,17 @@ const Addresses: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleOpenModal = (address?: Address) => {
+  useEffect(() => {
+    fetchAddresses();
+  }, [fetchAddresses]);
+
+  const defaultAddress =
+    addresses?.find((a) => a.isDefault) ||
+    (addresses?.length > 0 ? addresses[0] : null);
+
+  const handleOpenForm = (address?: Address) => {
     if (address) {
       setEditingAddress(address);
       setFormData(address);
@@ -67,10 +74,10 @@ const Addresses: React.FC = () => {
         state: "",
         postalCode: "",
         country: "India",
-        isDefault: false,
+        isDefault: addresses?.length === 0,
       });
     }
-    setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const handleInputChange = (
@@ -88,31 +95,33 @@ const Addresses: React.FC = () => {
     e.preventDefault();
     try {
       if (editingAddress?._id) {
-        const data = await updateAddress(editingAddress._id, formData);
-        if (data.success) {
+        const data = await updateAddress(editingAddress?._id, formData);
+        if (data?.success) {
           toast.success("Address updated successfully");
-          setAddresses(data.addresses);
+          setAddresses(data?.addresses);
         }
       } else {
         const data = await addAddress(formData);
-        if (data.success) {
+        if (data?.success) {
           toast.success("Address added successfully");
-          setAddresses(data.addresses);
+          setAddresses(data?.addresses);
         }
       }
-      setIsModalOpen(false);
+      setIsFormOpen(false);
+      setIsSelectorOpen(false);
     } catch (_error) {
       toast.error("Failed to save address");
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     if (window.confirm("Are you sure you want to delete this address?")) {
       try {
         const data = await deleteAddress(id);
-        if (data.success) {
+        if (data?.success) {
           toast.success("Address deleted successfully");
-          setAddresses(data.addresses);
+          setAddresses(data?.addresses);
         }
       } catch (_error) {
         toast.error("Failed to delete address");
@@ -123,9 +132,10 @@ const Addresses: React.FC = () => {
   const handleSetDefault = async (id: string) => {
     try {
       const data = await setDefaultAddress(id);
-      if (data.success) {
+      if (data?.success) {
         toast.success("Default address updated");
-        setAddresses(data.addresses);
+        setAddresses(data?.addresses);
+        setIsSelectorOpen(false);
       }
     } catch (_error) {
       toast.error("Failed to update default address");
@@ -136,27 +146,18 @@ const Addresses: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-12">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-serif font-black text-text-primary mb-2">
-              My Addresses
-            </h1>
-            <p className="text-text-secondary text-sm md:text-base">
-              Manage your saved delivery addresses for a faster checkout
-              experience.
-            </p>
-          </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-text-inverse rounded-xl font-bold transition-all hover:opacity-90 active:scale-95 shadow-lg shadow-accent/20"
-          >
-            <AddIcon fontSize="small" />
-            Add New Address
-          </button>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="mb-12">
+          <h1 className="text-3xl md:text-4xl font-serif font-black text-text-primary mb-2">
+            My Address
+          </h1>
+          <p className="text-text-secondary text-sm md:text-base">
+            Your primary delivery address used for orders and shipping
+            calculations.
+          </p>
         </div>
 
-        {addresses.length === 0 ? (
+        {!defaultAddress ? (
           <div className="bg-surface p-12 rounded-3xl border border-border text-center shadow-sm">
             <div className="w-20 h-20 bg-background rounded-full flex items-center justify-center mx-auto mb-6">
               <HomeIcon
@@ -164,100 +165,164 @@ const Addresses: React.FC = () => {
               />
             </div>
             <h2 className="text-2xl font-bold text-text-primary mb-2">
-              No Saved Addresses
+              No Address Saved
             </h2>
             <p className="text-text-secondary mb-8 max-w-sm mx-auto">
-              You haven't added any delivery addresses yet. Add your first one
-              to get started.
+              You haven't added any delivery addresses yet.
             </p>
             <button
-              onClick={() => handleOpenModal()}
+              onClick={() => handleOpenForm()}
               className="px-8 py-3 bg-accent text-text-inverse rounded-xl font-bold transition-all hover:opacity-90 shadow-lg shadow-accent/20"
             >
-              Add Your First Address
+              Add New Address
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {addresses.map((address) => (
-              <div
-                key={address._id}
-                className={cn(
-                  "group relative bg-surface p-6 rounded-2xl border transition-all duration-300 hover:shadow-xl",
-                  address.isDefault
-                    ? "border-accent ring-1 ring-accent/20"
-                    : "border-border hover:border-accent/50",
-                )}
-              >
-                {address.isDefault && (
-                  <div className="absolute top-4 right-4 text-accent">
-                    <CheckCircleIcon fontSize="small" />
-                  </div>
-                )}
+          <div className="space-y-6">
+            <div className="bg-surface p-8 rounded-3xl border-2 border-accent ring-4 ring-accent/5 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6">
+                <span className="inline-flex items-center px-3 py-1 bg-accent/10 text-accent text-xs font-black uppercase tracking-widest rounded-full">
+                  Primary Default
+                </span>
+              </div>
 
-                <div className="flex justify-between items-start mb-4 pr-8">
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-lg text-text-primary capitalize truncate max-w-[150px]">
-                      {address.fullName}
+              <div className="flex flex-col md:flex-row justify-between gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-black text-text-primary capitalize mb-1">
+                      {defaultAddress?.fullName}
                     </h3>
-                    {address.isDefault && (
-                      <span className="inline-block px-2 py-0.5 bg-accent/10 text-accent text-[10px] uppercase font-bold tracking-wider rounded">
-                        Default
-                      </span>
+                    <p className="text-accent font-bold">
+                      {defaultAddress?.phone}
+                    </p>
+                  </div>
+
+                  <div className="text-lg text-text-secondary leading-relaxed max-w-md">
+                    <p>{defaultAddress?.addressLine1}</p>
+                    {defaultAddress?.addressLine2 && (
+                      <p>{defaultAddress?.addressLine2}</p>
                     )}
+                    <p>
+                      {defaultAddress?.city}, {defaultAddress?.state} -{" "}
+                      {defaultAddress?.postalCode}
+                    </p>
+                    <p>{defaultAddress?.country}</p>
                   </div>
                 </div>
 
-                <div className="space-y-1 text-sm text-text-secondary mb-8 min-h-[100px]">
-                  <p className="line-clamp-1">{address.addressLine1}</p>
-                  {address.addressLine2 && (
-                    <p className="line-clamp-1">{address.addressLine2}</p>
-                  )}
-                  <p>
-                    {address.city}, {address.state} - {address.postalCode}
-                  </p>
-                  <p>{address.country}</p>
-                  <p className="pt-2 font-medium text-text-primary">
-                    Phone: {address.phone}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleOpenModal(address)}
-                      className="p-2 bg-background hover:bg-surface-hover text-text-secondary hover:text-accent rounded-lg transition-all"
-                      title="Edit"
-                    >
-                      <EditIcon fontSize="small" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(address._id!)}
-                      className="p-2 bg-background hover:bg-surface-hover text-text-secondary hover:text-error rounded-lg transition-all"
-                      title="Delete"
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </button>
-                  </div>
-
-                  {!address.isDefault && (
-                    <button
-                      onClick={() => handleSetDefault(address._id!)}
-                      className="text-xs font-bold uppercase tracking-widest text-text-muted hover:text-accent transition-colors"
-                    >
-                      Set as Default
-                    </button>
-                  )}
+                <div className="flex flex-row md:flex-col gap-3 justify-end">
+                  <button
+                    onClick={() => handleOpenForm(defaultAddress)}
+                    className="p-4 bg-background hover:bg-surface-hover text-text-secondary hover:text-accent rounded-2xl transition-all border border-border"
+                    title="Edit"
+                  >
+                    <EditIcon />
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(e, defaultAddress?._id!)}
+                    className="p-4 bg-background hover:bg-surface-hover text-text-secondary hover:text-error rounded-2xl transition-all border border-border"
+                    title="Delete"
+                  >
+                    <DeleteOutlineIcon />
+                  </button>
                 </div>
               </div>
-            ))}
+
+              <div className="mt-10 pt-8 border-t border-border flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => setIsSelectorOpen(true)}
+                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-text-primary text-text-inverse rounded-2xl font-bold transition-all hover:opacity-90 active:scale-[0.98] shadow-lg"
+                >
+                  <SwapHorizIcon />
+                  Change Address
+                </button>
+                <button
+                  onClick={() => handleOpenForm()}
+                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-surface text-text-primary border border-border rounded-2xl font-bold transition-all hover:bg-surface-hover active:scale-[0.98]"
+                >
+                  <AddIcon />
+                  Add New Address
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
+      {/* Address Selector Modal */}
       <CustomModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        open={isSelectorOpen}
+        onClose={() => setIsSelectorOpen(false)}
+        title="Select Address"
+      >
+        <div className="max-w-2xl w-full max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar space-y-4">
+          {addresses.map((address) => (
+            <div
+              key={address?._id}
+              onClick={() => handleSetDefault(address?._id!)}
+              className={cn(
+                "group relative p-5 rounded-2xl border-2 transition-all cursor-pointer text-left",
+                address?.isDefault || addresses?.length === 1
+                  ? "border-accent bg-accent/5"
+                  : "border-border bg-surface hover:border-accent/40",
+              )}
+            >
+              <div className="flex justify-between items-start mb-2 pr-12">
+                <div>
+                  <h4 className="font-bold text-text-primary capitalize">
+                    {address?.fullName}
+                  </h4>
+                  <p className="text-xs text-accent font-bold">
+                    {address?.phone}
+                  </p>
+                </div>
+                {address?.isDefault && (
+                  <CheckCircleIcon className="text-accent" fontSize="small" />
+                )}
+              </div>
+              <div className="text-sm text-text-secondary">
+                <p className="truncate">{address?.addressLine1}</p>
+                <p className="truncate">
+                  {address?.city}, {address?.state} - {address?.postalCode}
+                </p>
+              </div>
+
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenForm(address);
+                  }}
+                  className="p-1.5 bg-background text-text-muted hover:text-accent rounded-lg border border-border"
+                >
+                  <EditIcon fontSize="inherit" />
+                </button>
+                {!address?.isDefault && (
+                  <button
+                    onClick={(e) => handleDelete(e, address?._id!)}
+                    className="p-1.5 bg-background text-text-muted hover:text-error rounded-lg border border-border"
+                  >
+                    <DeleteOutlineIcon fontSize="inherit" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={() => handleOpenForm()}
+            className="w-full py-4 border-2 border-dashed border-border rounded-2xl text-text-muted font-bold hover:border-accent hover:text-accent transition-all flex items-center justify-center gap-2"
+          >
+            <AddIcon fontSize="small" />
+            Add New Address
+          </button>
+        </div>
+      </CustomModal>
+
+      {/* Add/Edit Form Modal */}
+      <CustomModal
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
         title={editingAddress ? "Edit Address" : "Add New Address"}
       >
         <div className="max-w-2xl w-full max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -270,11 +335,10 @@ const Addresses: React.FC = () => {
                 <input
                   type="text"
                   name="fullName"
-                  value={formData.fullName}
+                  value={formData?.fullName}
                   onChange={handleInputChange}
                   required
-                  placeholder="John Doe"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
                 />
               </div>
               <div className="space-y-1.5">
@@ -284,11 +348,10 @@ const Addresses: React.FC = () => {
                 <input
                   type="tel"
                   name="phone"
-                  value={formData.phone}
+                  value={formData?.phone}
                   onChange={handleInputChange}
                   required
-                  placeholder="1234567890"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
                 />
               </div>
             </div>
@@ -300,11 +363,10 @@ const Addresses: React.FC = () => {
               <input
                 type="text"
                 name="addressLine1"
-                value={formData.addressLine1}
+                value={formData?.addressLine1}
                 onChange={handleInputChange}
                 required
-                placeholder="Street address, P.O. box, company name"
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
               />
             </div>
 
@@ -315,10 +377,9 @@ const Addresses: React.FC = () => {
               <input
                 type="text"
                 name="addressLine2"
-                value={formData.addressLine2}
+                value={formData?.addressLine2}
                 onChange={handleInputChange}
-                placeholder="Apartment, suite, unit, building, floor, etc."
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
               />
             </div>
 
@@ -330,10 +391,10 @@ const Addresses: React.FC = () => {
                 <input
                   type="text"
                   name="city"
-                  value={formData.city}
+                  value={formData?.city}
                   onChange={handleInputChange}
                   required
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
                 />
               </div>
               <div className="space-y-1.5">
@@ -343,10 +404,10 @@ const Addresses: React.FC = () => {
                 <input
                   type="text"
                   name="state"
-                  value={formData.state}
+                  value={formData?.state}
                   onChange={handleInputChange}
                   required
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
                 />
               </div>
               <div className="space-y-1.5">
@@ -356,51 +417,36 @@ const Addresses: React.FC = () => {
                 <input
                   type="text"
                   name="postalCode"
-                  value={formData.postalCode}
+                  value={formData?.postalCode}
                   onChange={handleInputChange}
                   required
                   maxLength={6}
-                  pattern="\d{6}"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
                 />
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
-                Country
-              </label>
-              <input
-                type="text"
-                name="country"
-                value={formData.country}
-                onChange={handleInputChange}
-                required
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-              />
             </div>
 
             <div className="flex items-center gap-3 pt-2">
               <input
                 type="checkbox"
-                id="isDefault"
+                id="isDefault-page"
                 name="isDefault"
                 checked={formData.isDefault}
                 onChange={handleInputChange}
-                className="w-5 h-5 accent-accent border-border rounded-lg cursor-pointer transition-all"
+                className="w-5 h-5 accent-accent"
               />
               <label
-                htmlFor="isDefault"
-                className="text-sm text-text-secondary cursor-pointer select-none"
+                htmlFor="isDefault-page"
+                className="text-sm text-text-secondary cursor-pointer"
               >
-                Set as default delivery address
+                Set as default address
               </label>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-6 sticky bottom-0 bg-surface">
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsFormOpen(false)}
                 className="flex-1 px-6 py-3.5 rounded-xl font-bold text-text-secondary hover:bg-background transition-colors"
               >
                 Cancel

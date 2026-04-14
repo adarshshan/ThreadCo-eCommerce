@@ -73,7 +73,8 @@ const CartItem: React.FC<CartItemProps> = React.memo(
           <div className="flex flex-wrap gap-4 text-sm text-text-secondary mb-4">
             {item?.selectedSize && (
               <span className="bg-surface-light px-2.5 py-1 rounded-md border border-border text-xs font-medium">
-                Size: <span className="text-text-primary">{item?.selectedSize}</span>
+                Size:{" "}
+                <span className="text-text-primary">{item?.selectedSize}</span>
               </span>
             )}
             {item?.selectedColor && (
@@ -177,10 +178,17 @@ const Cart: React.FC = () => {
     if (defaultAddress?.postalCode && cart.length > 0) {
       const calculateShipping = async () => {
         try {
-          setShippingDetails(prev => ({ ...prev, loading: true, message: "" }));
+          setShippingDetails((prev) => ({
+            ...prev,
+            loading: true,
+            message: "",
+          }));
           const data = await validatePincode(
-            defaultAddress.postalCode, 
-            cart.map(item => ({ productId: item._id, quantity: item.quantity }))
+            defaultAddress.postalCode,
+            cart.map((item) => ({
+              productId: item._id,
+              quantity: item.quantity,
+            })),
           );
 
           if (data.success) {
@@ -189,14 +197,14 @@ const Cart: React.FC = () => {
               deliveryCharge: data.deliveryCharge,
               estimatedDelivery: data.estimatedDeliveryDate,
               valid: true,
-              message: ""
+              message: "",
             });
           } else {
             setShippingDetails({
               loading: false,
               deliveryCharge: 0,
               valid: false,
-              message: data.message || "Not serviceable"
+              message: data.message || "Not serviceable",
             });
           }
         } catch (error) {
@@ -204,7 +212,7 @@ const Cart: React.FC = () => {
             loading: false,
             deliveryCharge: 0,
             valid: false,
-            message: "Failed to calculate shipping"
+            message: "Failed to calculate shipping",
           });
         }
       };
@@ -214,7 +222,9 @@ const Cart: React.FC = () => {
         loading: false,
         deliveryCharge: 0,
         valid: false,
-        message: defaultAddress ? "" : "Add a default address to calculate delivery"
+        message: defaultAddress
+          ? ""
+          : "Add a default address to calculate delivery",
       });
     }
   }, [cart, defaultAddress]);
@@ -245,7 +255,9 @@ const Cart: React.FC = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="bg-surface p-12 rounded-3xl border border-border max-w-lg mx-auto shadow-sm">
             <div className="bg-background w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingBagIcon sx={{ fontSize: 40, color: "var(--color-text-muted)" }} />
+              <ShoppingBagIcon
+                sx={{ fontSize: 40, color: "var(--color-text-muted)" }}
+              />
             </div>
             <h2 className="text-3xl font-serif font-black text-text-primary mb-4">
               Your cart is empty
@@ -300,19 +312,22 @@ const Cart: React.FC = () => {
               <div className="bg-surface rounded-2xl p-6 border border-border shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <LocationOnIcon className="text-accent" fontSize="small" />
-                  <h4 className="font-bold text-text-primary">Delivery Address</h4>
+                  <h4 className="font-bold text-text-primary">
+                    Delivery Address
+                  </h4>
                 </div>
-                
+
                 {defaultAddress ? (
                   <div className="space-y-2">
                     <p className="text-sm font-bold text-text-primary truncate">
                       Deliver to: {defaultAddress.fullName}
                     </p>
                     <p className="text-xs text-text-secondary line-clamp-1">
-                      {defaultAddress.addressLine1}, {defaultAddress.city} - {defaultAddress.postalCode}
+                      {defaultAddress.addressLine1}, {defaultAddress.city} -{" "}
+                      {defaultAddress.postalCode}
                     </p>
-                    <Link 
-                      to="/addresses" 
+                    <Link
+                      to="/addresses"
                       className="text-xs font-bold text-accent hover:underline inline-block mt-1"
                     >
                       Change Address
@@ -321,10 +336,12 @@ const Cart: React.FC = () => {
                 ) : (
                   <div className="space-y-3">
                     <p className="text-xs text-text-secondary">
-                      {user ? "Set a default address to calculate shipping" : "Login to see delivery charges"}
+                      {user
+                        ? "Set a default address to calculate shipping"
+                        : "Login to see delivery charges"}
                     </p>
-                    <Link 
-                      to={user ? "/addresses" : "/login"} 
+                    <Link
+                      to={user ? "/addresses" : "/login"}
                       className="text-xs font-bold text-accent border border-accent/20 px-3 py-1.5 rounded-lg hover:bg-accent/5 transition-colors inline-block"
                     >
                       {user ? "Manage Addresses" : "Login Now"}
@@ -342,44 +359,70 @@ const Cart: React.FC = () => {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-sm text-text-secondary">
                     <span>Subtotal</span>
-                    <span className="text-text-primary font-bold">₹{subtotal.toFixed(2)}</span>
+                    <span className="text-text-primary font-bold">
+                      ₹{subtotal.toFixed(2)}
+                    </span>
                   </div>
-                  
+
                   <div className="flex justify-between text-sm text-text-secondary">
                     <span>Delivery Charges</span>
                     {shippingDetails.loading ? (
-                      <span className="text-accent text-xs animate-pulse font-medium">Calculating...</span>
+                      <span className="text-accent text-xs animate-pulse font-medium">
+                        Calculating...
+                      </span>
                     ) : (
-                      <span className={cn("font-bold", shippingDetails.deliveryCharge === 0 ? "text-success" : "text-text-primary")}>
-                        {shippingDetails.valid 
-                          ? (shippingDetails.deliveryCharge === 0 ? "FREE" : `₹${shippingDetails.deliveryCharge.toFixed(2)}`)
-                          : "—"
-                        }
+                      <span
+                        className={cn(
+                          "font-bold",
+                          shippingDetails.deliveryCharge === 0
+                            ? "text-success"
+                            : "text-text-primary",
+                        )}
+                      >
+                        {shippingDetails.valid
+                          ? shippingDetails.deliveryCharge === 0
+                            ? "FREE"
+                            : `₹${shippingDetails.deliveryCharge.toFixed(2)}`
+                          : "—"}
                       </span>
                     )}
                   </div>
 
                   {shippingDetails.message && (
-                    <p className="text-[10px] text-error font-medium">{shippingDetails.message}</p>
+                    <p className="text-[10px] text-error font-medium">
+                      {shippingDetails.message}
+                    </p>
                   )}
 
                   <div className="flex justify-between text-sm text-text-secondary border-t border-border pt-4">
                     <span>Tax (GST)</span>
-                    <span className="text-text-primary font-medium">Included</span>
+                    <span className="text-text-primary font-medium">
+                      Included
+                    </span>
                   </div>
                 </div>
 
                 {shippingDetails.valid && shippingDetails.estimatedDelivery && (
                   <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 mb-6">
                     <p className="text-xs text-accent font-medium text-center">
-                      🚚 Estimated Delivery: <span className="font-bold">{new Date(shippingDetails.estimatedDelivery).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</span>
+                      🚚 Estimated Delivery:{" "}
+                      <span className="font-bold">
+                        {new Date(
+                          shippingDetails.estimatedDelivery,
+                        ).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
                     </p>
                   </div>
                 )}
 
                 <div className="border-t border-border pt-4 mb-8">
                   <div className="flex justify-between items-end">
-                    <span className="text-lg font-bold text-text-primary">Total</span>
+                    <span className="text-lg font-bold text-text-primary">
+                      Total
+                    </span>
                     <span className="text-3xl font-black text-accent">
                       ₹{totalPayable.toFixed(2)}
                     </span>
@@ -388,7 +431,7 @@ const Cart: React.FC = () => {
 
                 <CustomButton
                   onclick={handleCheckout}
-                  className="bg-accent text-text-inverse w-full py-4 rounded-xl font-bold shadow-lg shadow-accent/20 hover:opacity-90 transition-all active:scale-[0.98]"
+                  className="bg-accent text-text-inverse w-full py-4 rounded-xl font-bold shadow-lg shadow-accent/20 hover:opacity-90 transition-all active:scale-[0.98] animate-pulse hover:animate-none"
                 >
                   Proceed to Checkout
                 </CustomButton>
