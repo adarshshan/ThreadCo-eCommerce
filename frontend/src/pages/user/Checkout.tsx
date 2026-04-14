@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useStore } from "../../store/useStore";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,12 +6,23 @@ import {
   verifyPayment,
   createOrder,
   validatePincode,
+  getAddresses,
+  addAddress,
+  updateAddress,
 } from "../../services/api";
+import type { Address } from "../../types/User";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import EditIcon from "@mui/icons-material/Edit";
 import CustomButton from "../../components/CustomButton";
 import OrderSuccessModal from "../../components/OrderSuccessModal";
+import CustomModal from "../../components/Modal";
+import Loading from "../../components/Loading";
+import toast from "react-hot-toast";
+import { cn } from "../../utils/cn";
 
 declare global {
   interface Window {
@@ -23,105 +34,194 @@ const Checkout = () => {
   const cart = useStore((state) => state.cart);
   const clearCart = useStore((state) => state.clearCart);
   const user = useStore((state) => state.user);
-  const [scrollup, setScrollup] = useState<boolean>(false);
-
   const navigate = useNavigate();
+
+  // Step state: 1: Address Selection, 2: Review & Pay
+  const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [step, setStep] = useState(1); // 1: Address, 2: Review & Pay
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | undefined>();
-  const [shippingAddress, setShippingAddress] = useState({
+  
+  // Addresses state
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
+  
+  // Modal state for Add/Edit
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [formData, setFormData] = useState<Partial<Address>>({
     fullName: "",
+    phone: "",
     addressLine1: "",
+    addressLine2: "",
     city: "",
     state: "",
     postalCode: "",
     country: "India",
-    phone: "",
+    isDefault: false,
   });
 
+  // Shipping & Order Details
   const [pincodeStatus, setPincodeStatus] = useState<{
     loading: boolean;
     valid: boolean | null;
     message: string;
+    deliveryCharge: number;
     estimatedDelivery?: string;
   }>({
     loading: false,
     valid: null,
     message: "",
+    deliveryCharge: 0,
   });
+  const [orderData, setOrderData] = useState<any>(null);
+
+  // 1. Fetch Addresses
+  const fetchAddresses = useCallback(async () => {
+    try {
+      setIsLoadingAddresses(true);
+      const data = await getAddresses();
+      if (data.success) {
+        setAddresses(data.addresses);
+        
+        // Auto-select default or first address
+        if (data.addresses.length > 0) {
+          const defaultAddr = data.addresses.find(a => a.isDefault) || data.addresses[0];
+          setSelectedAddress(defaultAddr);
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to fetch saved addresses");
+    } finally {
+      setIsLoadingAddresses(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (
-      shippingAddress.postalCode.length === 6 &&
-      /^\d{6}$/.test(shippingAddress.postalCode)
-    ) {
-      const timer = setTimeout(async () => {
+    fetchAddresses();
+  }, [fetchAddresses]);
+
+  // 2. Validate Pincode and Calculate Shipping whenever selected address changes
+  useEffect(() => {
+    if (selectedAddress?.postalCode && cart.length > 0) {
+      const pin = selectedAddress.postalCode;
+      const validate = async () => {
         try {
-          setPincodeStatus((prev) => ({ ...prev, loading: true, message: "" }));
-          const data = await validatePincode(shippingAddress.postalCode);
+          setPincodeStatus(prev => ({ ...prev, loading: true, message: "" }));
+          const data = await validatePincode(pin, cart.map(item => ({ 
+            productId: item._id, 
+            quantity: item.quantity 
+          })));
 
           if (data.success) {
             setPincodeStatus({
               loading: false,
               valid: true,
               message: `Serviceable in ${data.city}, ${data.state}`,
+              deliveryCharge: data.deliveryCharge,
               estimatedDelivery: data.estimatedDeliveryDate,
             });
-            // Auto-fill city and state if they are empty
-            setShippingAddress((prev) => ({
-              ...prev,
-              city: prev.city || data.city,
-              state: prev.state || data.state,
-            }));
+          } else {
+            setPincodeStatus({
+              loading: false,
+              valid: false,
+              message: data.message || "Pincode not serviceable",
+              deliveryCharge: 0,
+            });
           }
         } catch (error: any) {
           setPincodeStatus({
             loading: false,
             valid: false,
-            message:
-              error.response?.data?.message ||
-              "Invalid PIN code or not serviceable.",
+            message: "Shipping calculation failed. Please try again.",
+            deliveryCharge: 0,
           });
         }
-      }, 600);
-      return () => clearTimeout(timer);
-    } else if (shippingAddress.postalCode.length > 0) {
-      setPincodeStatus({
-        loading: false,
-        valid: false,
-        message: "PIN code must be 6 digits.",
-      });
-    } else {
-      setPincodeStatus({
-        loading: false,
-        valid: null,
-        message: "",
-      });
+      };
+      validate();
     }
-  }, [shippingAddress.postalCode]);
+  }, [selectedAddress, cart]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [scrollup]);
+  }, [step]);
 
-  // Initialize name from user once available
-  useEffect(() => {
-    if (user && !shippingAddress.fullName) {
-      setShippingAddress((prev) => ({ ...prev, fullName: user.name }));
+  // Handle Address Modal
+  const handleOpenModal = (address?: Address) => {
+    if (address) {
+      setEditingAddress(address);
+      setFormData(address);
+    } else {
+      setEditingAddress(null);
+      setFormData({
+        fullName: user?.name || "",
+        phone: "",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "India",
+        isDefault: addresses.length === 0,
+      });
     }
-  }, [user]);
+    setIsModalOpen(true);
+  };
 
-  const [orderData, setOrderData] = useState<any>(null);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pincodeStatus.valid === false) {
-      setErrorMessage("Please enter a valid and serviceable PIN code.");
+    try {
+      setIsProcessing(true);
+      let data;
+      if (editingAddress?._id) {
+        data = await updateAddress(editingAddress._id, formData);
+        if (data.success) {
+          toast.success("Address updated");
+          setAddresses(data.addresses);
+          if (selectedAddress?._id === editingAddress._id) {
+            const updated = data.addresses.find((a: any) => a._id === editingAddress._id);
+            setSelectedAddress(updated);
+          }
+        }
+      } else {
+        data = await addAddress(formData);
+        if (data.success) {
+          toast.success("Address added");
+          setAddresses(data.addresses);
+          // Auto select newly added address
+          const newAddr = data.addresses[data.addresses.length - 1];
+          setSelectedAddress(newAddr);
+        }
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to save address");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Step transitions
+  const proceedToPayment = async () => {
+    if (!selectedAddress) {
+      toast.error("Please select a shipping address");
       return;
     }
-    setScrollup(!scrollup);
+    if (!pincodeStatus.valid) {
+      toast.error("Selected address is not serviceable");
+      return;
+    }
+
     try {
       setIsProcessing(true);
       setErrorMessage("");
@@ -131,24 +231,20 @@ const Checkout = () => {
           quantity: item.quantity,
           size: item.selectedSize,
         })),
+        selectedAddress.postalCode
       );
       setOrderData(data);
       setStep(2);
-      setIsProcessing(false);
     } catch (error: any) {
-      console.error("Error creating razorpay order:", error);
-      setErrorMessage(
-        error.response?.data?.message ||
-          "Failed to initiate payment. Please check your network.",
-      );
+      setErrorMessage(error.response?.data?.message || "Failed to initiate payment.");
+    } finally {
       setIsProcessing(false);
     }
   };
 
   const handlePayment = async () => {
-    if (!orderData) return;
+    if (!orderData || !selectedAddress) return;
 
-    // Check if Razorpay is already loaded, if not, wait for it
     if (!window.Razorpay) {
       const loadScript = (src: string) => {
         return new Promise((resolve) => {
@@ -160,13 +256,9 @@ const Checkout = () => {
         });
       };
 
-      const res = await loadScript(
-        "https://checkout.razorpay.com/v1/checkout.js",
-      );
+      const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
       if (!res) {
-        setErrorMessage(
-          "Razorpay SDK failed to load. Please check your internet connection and try again.",
-        );
+        setErrorMessage("Razorpay SDK failed to load.");
         return;
       }
     }
@@ -176,7 +268,7 @@ const Checkout = () => {
       amount: orderData.amount * 100,
       currency: orderData.currency,
       name: "ThreadCo",
-      description: "Secure Purchase from ThreadCo",
+      description: "Secure Purchase",
       order_id: orderData.orderId,
       handler: async (response: any) => {
         try {
@@ -189,30 +281,23 @@ const Checkout = () => {
 
           if (verificationResult?.success) {
             const newOrder = await createOrder({
-              orderItems: cart?.map((item) => ({
-                product: item?._id,
-                name: item?.name,
-                image:
-                  item?.images && item?.images?.length > 0
-                    ? item?.images[0]?.url
-                    : "",
-                price: item?.price,
-                quantity: item?.quantity,
-                size: item?.selectedSize,
-                color: item?.selectedColor,
+              orderItems: cart.map((item) => ({
+                product: item._id,
+                name: item.name,
+                image: item.images?.[0]?.url || "",
+                price: item.price,
+                quantity: item.quantity,
+                size: item.selectedSize,
+                color: item.selectedColor,
               })),
-              shippingAddress,
-              estimatedDeliveryDate: pincodeStatus?.estimatedDelivery,
+              shippingAddress: selectedAddress,
+              estimatedDeliveryDate: pincodeStatus.estimatedDelivery,
               paymentMethod: "Razorpay",
-              itemsPrice: cart?.reduce(
-                (acc, item) => acc + item?.price * item?.quantity,
-                0,
-              ),
-              // taxPrice: orderData.tax,
-              shippingPrice: orderData?.shipping,
-              totalPrice: orderData?.amount,
+              itemsPrice: cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
+              shippingPrice: pincodeStatus.deliveryCharge,
+              totalPrice: orderData.amount,
               paymentResult: {
-                id: response?.razorpay_payment_id,
+                id: response.razorpay_payment_id,
                 status: "succeeded",
                 update_time: new Date().toISOString(),
                 email_address: user?.email,
@@ -224,33 +309,30 @@ const Checkout = () => {
             setShowSuccessModal(true);
           }
         } catch (error: any) {
-          setErrorMessage(
-            "Payment verification failed: " +
-              (error.response?.data?.message || error.message),
-          );
+          setErrorMessage("Payment verification failed.");
         } finally {
           setIsProcessing(false);
         }
       },
       prefill: {
-        name: shippingAddress.fullName,
+        name: selectedAddress.fullName,
         email: user?.email,
-        contact: shippingAddress.phone,
+        contact: selectedAddress.phone,
       },
-      theme: {
-        color: "#38bdf8", // accent Sky-400
-      },
+      theme: { color: "#38bdf8" },
     };
 
     const rzp = new window.Razorpay(options);
-    rzp.on("payment.failed", function (response: any) {
-      setErrorMessage(response.error.description);
-    });
     rzp.open();
   };
 
+  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalPayable = subtotal + pincodeStatus.deliveryCharge;
+
+  if (isLoadingAddresses) return <Loading />;
+
   return (
-    <div className="min-h-screen bg-background pb-5 sm:pb-20 px-[1rem] sm:px-[5rem]">
+    <div className="min-h-screen bg-background pb-20 px-[1rem] sm:px-[5rem]">
       <OrderSuccessModal
         open={showSuccessModal}
         onClose={() => {
@@ -258,368 +340,312 @@ const Checkout = () => {
           navigate("/");
         }}
         orderId={placedOrderId}
-        totalAmount={orderData?.amount}
+        totalAmount={orderData?.amount || totalPayable}
       />
-      <div className="container-custom py-4 sm:py-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-serif font-black text-text-primary mb-4">
-              Checkout
-            </h1>
-            <div className="flex items-center justify-center gap-4 sm:gap-8">
-              <div
-                className={`flex items-center gap-2 ${step === 1 ? "text-accent" : "text-text-muted"}`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 1 ? "border-accent bg-accent/10" : "border-text-muted"}`}
-                >
-                  1
-                </div>
-                <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
-                  Shipping
-                </span>
-              </div>
-              <div className="h-px w-8 sm:w-16 bg-border"></div>
-              <div
-                className={`flex items-center gap-2 ${step === 2 ? "text-accent" : "text-text-muted"}`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 2 ? "border-accent bg-accent/10" : "border-text-muted"}`}
-                >
-                  2
-                </div>
-                <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
-                  Payment
-                </span>
-              </div>
+
+      <div className="max-w-7xl mx-auto py-8 md:py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-serif font-black text-text-primary mb-4">Checkout</h1>
+          <div className="flex items-center justify-center gap-4 sm:gap-8">
+            <div className={`flex items-center gap-2 ${step === 1 ? "text-accent" : "text-text-muted"}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 1 ? "border-accent bg-accent/10" : "border-text-muted"}`}>1</div>
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Address</span>
+            </div>
+            <div className="h-px w-8 sm:w-16 bg-border"></div>
+            <div className={`flex items-center gap-2 ${step === 2 ? "text-accent" : "text-text-muted"}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 2 ? "border-accent bg-accent/10" : "border-text-muted"}`}>2</div>
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Payment</span>
             </div>
           </div>
+        </div>
 
-          {errorMessage && (
-            <div className="bg-error/10 border border-error/20 text-error px-6 py-4 rounded-xl mb-8 flex items-center gap-3">
-              <span className="text-sm font-medium">{errorMessage}</span>
-            </div>
-          )}
+        {errorMessage && (
+          <div className="bg-error/10 border border-error/20 text-error px-6 py-4 rounded-xl mb-8">
+            <span className="text-sm font-medium">{errorMessage}</span>
+          </div>
+        )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-7">
-              {step === 1 ? (
-                <div className="card bg-surface px-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-7">
+            {step === 1 ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
                     <LocalShippingIcon className="text-accent" />
-                    <h3 className="text-xl font-bold text-text-primary">
-                      Shipping Information
-                    </h3>
+                    <h3 className="text-xl font-bold text-text-primary">Shipping Address</h3>
                   </div>
-
-                  <form
-                    onSubmit={handleAddressSubmit}
-                    className="space-y-6 text-text-primary"
+                  <button 
+                    onClick={() => handleOpenModal()}
+                    className="flex items-center gap-1 text-accent text-sm font-bold uppercase tracking-wider hover:opacity-80 transition-opacity"
                   >
-                    <div className="space-y-4">
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Your full name"
-                          required
-                          className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
-                          value={shippingAddress.fullName}
-                          onChange={(e) =>
-                            setShippingAddress({
-                              ...shippingAddress,
-                              fullName: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                    <AddIcon fontSize="small" /> Add New
+                  </button>
+                </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                          Address Line 1
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="House / Street / Apartment"
-                          required
-                          className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
-                          value={shippingAddress.addressLine1}
-                          onChange={(e) =>
-                            setShippingAddress({
-                              ...shippingAddress,
-                              addressLine1: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                            City
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="City"
-                            required
-                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
-                            value={shippingAddress.city}
-                            onChange={(e) =>
-                              setShippingAddress({
-                                ...shippingAddress,
-                                city: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                            State / Province
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="State"
-                            required
-                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
-                            value={shippingAddress.state}
-                            onChange={(e) =>
-                              setShippingAddress({
-                                ...shippingAddress,
-                                state: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                            Postal Code
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="6-digit code"
-                            required
-                            maxLength={6}
-                            className={`w-full bg-surface-light border ${
-                              pincodeStatus.valid === true
-                                ? "border-success"
-                                : pincodeStatus.valid === false
-                                  ? "border-error"
-                                  : "border-border"
-                            } hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all`}
-                            value={shippingAddress.postalCode}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, "");
-                              setShippingAddress({
-                                ...shippingAddress,
-                                postalCode: value,
-                              });
+                {addresses.length === 0 ? (
+                  <div className="bg-surface p-8 rounded-2xl border border-border text-center">
+                    <p className="text-text-secondary mb-4">No saved addresses found.</p>
+                    <button 
+                      onClick={() => handleOpenModal()}
+                      className="px-6 py-2.5 bg-accent text-text-inverse rounded-xl font-bold transition-all hover:opacity-90"
+                    >
+                      Add Your First Address
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {addresses.map((address) => (
+                      <div
+                        key={address._id}
+                        onClick={() => setSelectedAddress(address)}
+                        className={cn(
+                          "relative p-5 rounded-2xl border-2 transition-all cursor-pointer",
+                          selectedAddress?._id === address._id 
+                            ? "border-accent bg-accent/5 shadow-lg ring-1 ring-accent/20" 
+                            : "border-border bg-surface hover:border-accent/40"
+                        )}
+                      >
+                        {selectedAddress?._id === address._id && (
+                          <div className="absolute top-3 right-3 text-accent">
+                            <CheckCircleIcon fontSize="small" />
+                          </div>
+                        )}
+                        <div className="flex justify-between items-start mb-2 pr-6">
+                          <h4 className="font-bold text-text-primary capitalize truncate">{address.fullName}</h4>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenModal(address);
                             }}
-                          />
-                          {pincodeStatus.loading && (
-                            <p className="text-xs text-accent animate-pulse">
-                              Checking serviceability...
-                            </p>
-                          )}
-                          {pincodeStatus.message && (
-                            <p
-                              className={`text-xs font-medium ${pincodeStatus.valid ? "text-success" : "text-error"}`}
-                            >
-                              {pincodeStatus.message}
-                            </p>
-                          )}
-                          {pincodeStatus.valid &&
-                            pincodeStatus.estimatedDelivery && (
-                              <p className="text-sm font-bold text-accent mt-1 bg-accent/5 p-2 rounded-lg border border-accent/10">
-                                🚚 Expected delivery by{" "}
-                                {new Date(
-                                  pincodeStatus.estimatedDelivery,
-                                ).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
-                              </p>
-                            )}
+                            className="p-1 text-text-muted hover:text-accent transition-colors"
+                          >
+                            <EditIcon fontSize="small" />
+                          </button>
                         </div>
-
-                        <div className="flex flex-col gap-2">
-                          <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                            Country
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Country"
-                            required
-                            className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
-                            value={shippingAddress.country}
-                            onChange={(e) =>
-                              setShippingAddress({
-                                ...shippingAddress,
-                                country: e.target.value,
-                              })
-                            }
-                          />
+                        <div className="text-xs text-text-secondary space-y-1">
+                          <p className="truncate">{address.addressLine1}</p>
+                          <p>{address.city}, {address.state} - {address.postalCode}</p>
+                          <p>Phone: {address.phone}</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
 
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          placeholder="Your contact number"
-                          required
-                          className="w-full bg-surface-light border border-border hover:border-border-light focus:border-accent focus:ring-1 focus:ring-accent outline-none px-4 py-3 rounded-xl transition-all"
-                          value={shippingAddress.phone}
-                          onChange={(e) =>
-                            setShippingAddress({
-                              ...shippingAddress,
-                              phone: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="sm:pt-6">
-                      <CustomButton type="submit" disabled={isProcessing}>
-                        {isProcessing ? "Processing..." : "Continue to Payment"}
-                      </CustomButton>
-                    </div>
-                  </form>
+                <div className="pt-6">
+                  <CustomButton 
+                    onclick={proceedToPayment} 
+                    disabled={isProcessing || !selectedAddress || pincodeStatus.valid === false}
+                  >
+                    {isProcessing ? "Processing..." : "Continue to Payment"}
+                  </CustomButton>
                 </div>
-              ) : (
-                <div className="card bg-surface px-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-8">
-                    <PaymentIcon className="text-accent" />
-                    <h3 className="text-xl font-bold text-text-primary">
-                      Payment Selection
-                    </h3>
-                  </div>
-
-                  <div className="bg-surface-light border border-border p-6 rounded-2xl mb-8">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="bg-accent/20 p-2 rounded-lg">
-                        <AssignmentIcon className="text-accent" />
-                      </div>
-                      <div>
-                        <p className="text-text-primary font-bold">
-                          Razorpay Secure Payment
-                        </p>
-                        <p className="text-xs text-text-secondary">
-                          Cards, Netbanking, UPI & Wallets
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <CustomButton
-                      onclick={() => setStep(1)}
-                      disabled={isProcessing}
-                      className="text-[var(--color-text-light)]"
-                    >
-                      Back
-                    </CustomButton>
-
-                    <CustomButton
-                      onclick={handlePayment}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? "Verifying..." : "Pay Securely Now"}
-                    </CustomButton>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Sidebar Summary */}
-            <div className="lg:col-span-5">
-              <div className="card bg-surface px-6 sm:p-6 sticky top-24">
-                <h3 className="text-lg font-bold text-text-primary mb-6 border-b border-border pb-4">
-                  Order Summary
-                </h3>
-
-                <div className="space-y-4 mb-8 max-h-[40vh] overflow-y-auto pr-2 scrollbar-thin">
-                  {cart.map((item) => (
-                    <div
-                      key={`${item?._id}-${item?.selectedSize}`}
-                      className="flex gap-4 items-center"
-                    >
-                      <div className="w-12 h-12 rounded bg-surface-light overflow-hidden flex-shrink-0">
-                        <img
-                          src={item?.images?.[0]?.url}
-                          alt={item?.images?.[0]?.url}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <p className="text-sm font-bold text-text-primary truncate">
-                          {item?.name}
-                        </p>
-                        <p className="text-xs text-text-muted">
-                          Qty: {item.quantity} • {item.selectedSize}
-                        </p>
-                      </div>
-                      <p className="text-sm font-bold text-text-primary">
-                        ₹{(item?.price * item?.quantity)?.toFixed(2)}
-                      </p>
-                    </div>
-                  ))}
+              </div>
+            ) : (
+              <div className="card bg-surface px-6 sm:p-8">
+                <div className="flex items-center gap-3 mb-8">
+                  <PaymentIcon className="text-accent" />
+                  <h3 className="text-xl font-bold text-text-primary">Payment Selection</h3>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm text-text-secondary">
-                    <span>Items Price</span>
-                    <span className="text-text-primary font-mono">
-                      ₹
-                      {cart
-                        .reduce(
-                          (acc, item) => acc + item?.price * item?.quantity,
-                          0,
-                        )
-                        .toFixed(2)}
+                <div className="bg-surface-light border border-border p-6 rounded-2xl mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-accent/20 p-2 rounded-lg">
+                      <AssignmentIcon className="text-accent" />
+                    </div>
+                    <div>
+                      <p className="text-text-primary font-bold">Razorpay Secure Payment</p>
+                      <p className="text-xs text-text-secondary">Cards, Netbanking, UPI & Wallets</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => setStep(1)}
+                    disabled={isProcessing}
+                    className="flex-1 px-6 py-3.5 rounded-xl font-bold text-text-secondary hover:bg-surface-light transition-colors border border-border"
+                  >
+                    Back to Address
+                  </button>
+                  <button
+                    onClick={handlePayment}
+                    disabled={isProcessing}
+                    className="flex-[2] px-6 py-3.5 bg-accent text-text-inverse rounded-xl font-bold shadow-lg shadow-accent/20 hover:opacity-90 transition-all active:scale-[0.98]"
+                  >
+                    {isProcessing ? "Verifying..." : "Pay Securely Now"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="lg:col-span-5">
+            <div className="card bg-surface px-6 sm:p-6 sticky top-24">
+              <h3 className="text-lg font-bold text-text-primary mb-6 border-b border-border pb-4">Order Summary</h3>
+              
+              <div className="space-y-4 mb-8 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                {cart.map((item) => (
+                  <div key={`${item._id}-${item.selectedSize}`} className="flex gap-4 items-center">
+                    <div className="w-14 h-14 rounded-lg bg-background overflow-hidden flex-shrink-0 border border-border">
+                      <img src={item.images?.[0]?.url} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <p className="text-sm font-bold text-text-primary truncate">{item.name}</p>
+                      <p className="text-xs text-text-muted">Qty: {item.quantity} • {item.selectedSize}</p>
+                    </div>
+                    <p className="text-sm font-bold text-text-primary">₹{(item.price * item.quantity).toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-sm text-text-secondary">
+                  <span>Subtotal</span>
+                  <span className="text-text-primary font-bold">₹{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-text-secondary">
+                  <span>Delivery Charges</span>
+                  {pincodeStatus.loading ? (
+                    <span className="text-accent text-xs animate-pulse">Calculating...</span>
+                  ) : (
+                    <span className={cn("font-bold", pincodeStatus.deliveryCharge === 0 ? "text-success" : "text-text-primary")}>
+                      {pincodeStatus.deliveryCharge === 0 ? "FREE" : `₹${pincodeStatus.deliveryCharge.toFixed(2)}`}
                     </span>
-                  </div>
-                  {orderData && (
-                    <div className="flex justify-between text-sm text-text-secondary">
-                      <span>Shipping</span>
-                      <span className="text-success font-mono font-bold">
-                        ₹{orderData?.shipping?.toFixed(2)}
-                      </span>
-                    </div>
                   )}
                 </div>
-
-                <div className="border-t border-border pt-4">
-                  <div className="flex justify-between items-end">
-                    <span className="text-text-primary font-bold">
-                      Total Payable
-                    </span>
-                    <span className="text-2xl font-black text-accent font-mono">
-                      ₹
-                      {(
-                        orderData?.amount ||
-                        cart.reduce(
-                          (acc, item) => acc + item?.price * item?.quantity,
-                          0,
-                        )
-                      ).toFixed(2)}
-                    </span>
+                {pincodeStatus.valid && (
+                  <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 mt-2">
+                    <p className="text-xs text-accent font-medium text-center">
+                      🚚 Estimated Delivery: <span className="font-bold">{new Date(pincodeStatus.estimatedDelivery!).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</span>
+                    </p>
                   </div>
+                )}
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="flex justify-between items-end">
+                  <span className="text-text-primary font-bold">Total Payable</span>
+                  <span className="text-3xl font-black text-accent">₹{totalPayable.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <CustomModal 
+        open={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        title={editingAddress ? "Edit Address" : "Add New Address"}
+      >
+        <div className="max-w-2xl w-full max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
+          <form onSubmit={handleAddressSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-text-muted">Full Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-text-muted">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest text-text-muted">Address Line 1</label>
+              <input
+                type="text"
+                name="addressLine1"
+                value={formData.addressLine1}
+                onChange={handleInputChange}
+                required
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-text-muted">City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-text-muted">State</label>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-text-muted">Pincode</label>
+                <input
+                  type="text"
+                  name="postalCode"
+                  value={formData.postalCode}
+                  onChange={handleInputChange}
+                  required
+                  maxLength={6}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <input
+                type="checkbox"
+                id="isDefault-checkout"
+                name="isDefault"
+                checked={formData.isDefault}
+                onChange={handleInputChange}
+                className="w-5 h-5 accent-accent"
+              />
+              <label htmlFor="isDefault-checkout" className="text-sm text-text-secondary cursor-pointer">Set as default address</label>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 sticky bottom-0 bg-surface">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-6 py-3.5 rounded-xl font-bold text-text-secondary hover:bg-background transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="flex-[2] px-6 py-3.5 rounded-xl font-bold bg-accent text-text-inverse shadow-lg shadow-accent/20 hover:opacity-90"
+              >
+                {isProcessing ? "Saving..." : "Save Address"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </CustomModal>
     </div>
   );
 };

@@ -22,12 +22,14 @@ interface ProductFormProps {
   product?: Product | null;
   onSave: (product: FormData) => void;
   onCancel: () => void;
+  handleDeleteProduct?: (id: string) => void;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({
   product,
   onSave,
   onCancel,
+  handleDeleteProduct,
 }) => {
   const [name, setName] = useState<string>("");
   const [price, setPrice] = useState<number | null>(null);
@@ -63,13 +65,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
     fetchCatsAndSellers();
 
     if (product) {
-      setName(product.name);
-      setPrice(product.price);
+      setName(product?.name);
+      setPrice(product?.price);
       setDescription(product?.description ?? "");
 
       const categoryId =
         typeof product?.category === "object"
-          ? (product.category as any)?._id
+          ? (product?.category as any)?._id
           : (product?.category ?? "");
       setCategory(categoryId);
 
@@ -207,7 +209,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         // Combine old and new image objects
         const allImages = [...existingImages, ...newImageObjects];
 
-        if (allImages.length > 0)
+        if (allImages?.length > 0)
           formData.append("images", JSON.stringify(allImages));
       } catch (error) {
         setPicMessage("Image upload failed. Please try again.");
@@ -229,7 +231,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <Paper
       elevation={3}
-      className="w-full  !shadow-none !bg-transparent rounded-xl !text-[var(--color-text-light)]"
+      className="w-full max-h-[90vh] overflow-y-scroll  !shadow-none !bg-transparent rounded-xl !text-[var(--color-text-light)] px-5"
     >
       <Typography variant="h5" className="font-bold mb-6 text-center">
         {product ? "Edit Product" : "Add Product"}
@@ -468,24 +470,37 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </Typography>
         </Box>
 
-        <Box className="flex justify-end mt-3 gap-3">
-          <Button
-            type="button"
-            variant="outlined"
-            color="secondary"
-            onClick={onCancel}
-            className="!border-gray-500 !text-[var(--color-text-light)] hover:!text-[#000000] hover:!bg-gray-100 !font-bold !py-2 !px-4 !rounded-md"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            className="!bg-[var(--color-surface-light)] hover:!bg-blue-700 !text-white !font-bold !py-2 !px-4 !rounded-md"
-          >
-            Save
-          </Button>
+        <Box className="flex justify-between mt-3 gap-3">
+          {product && handleDeleteProduct ? (
+            <button
+              onClick={() => handleDeleteProduct(String(product?._id))}
+              className="!border-gray-500 !text-red-500 hover:!bg-red-50 !font-bold !py-2 !px-4 !rounded-md"
+            >
+              Delete
+            </button>
+          ) : (
+            <div></div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <Button
+              type="button"
+              variant="outlined"
+              color="secondary"
+              onClick={onCancel}
+              className="!border-[var(--color-border)] !text-[var(--color-text-light)] hover:!text-[#000000] hover:!bg-gray-100 !font-bold !py-2 !px-4 !rounded-md"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              className="!border-[var(--color-border)] !bg-transparent hover:!bg-accent hover:!text-white !text-[var(--color-text-light)] !font-bold !py-2 !px-4 !rounded-md"
+            >
+              Save
+            </Button>
+          </div>
         </Box>
       </Box>
     </Paper>

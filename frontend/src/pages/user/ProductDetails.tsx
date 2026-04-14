@@ -206,7 +206,7 @@ const ProductDetails: React.FC = () => {
                             </span>
                           )
                         ) : (
-                          <span className="badge bg-red-500 text-text-primary border-none text-xs font-bold uppercase tracking-tighter px-2 rounded-md">
+                          <span className="badge bg-red-500 text-text-primary border-none text-xs font-bold uppercase tracking-tighter px-2 !rounded-md">
                             Out of Stock
                           </span>
                         );
@@ -216,10 +216,10 @@ const ProductDetails: React.FC = () => {
                         Please Select a Size
                       </span>
                     )
-                  ) : product?.stock && product.stock > 0 ? (
+                  ) : product?.stock && product?.stock > 0 ? (
                     product.stock < 5 ? (
-                      <span className="badge bg-orange-500 text-text-primary border-none text-xs font-bold uppercase tracking-tighter">
-                        Only {product.stock} left
+                      <span className="badge bg-orange-500 text-white border-none text-xs font-bold uppercase tracking-tighter px-2 rounded-md">
+                        Only {product?.stock} left
                       </span>
                     ) : (
                       <span className="text-success text-xs font-bold uppercase tracking-tighter">
@@ -227,7 +227,7 @@ const ProductDetails: React.FC = () => {
                       </span>
                     )
                   ) : (
-                    <span className="badge bg-red-500 text-text-primary border-none text-xs font-bold uppercase tracking-tighter">
+                    <span className="badge bg-red-500 text-white text-sm border-none text-xs font-bold uppercase tracking-tighter px-2 rounded-md">
                       Out of Stock
                     </span>
                   )}
@@ -328,12 +328,12 @@ const ProductDetails: React.FC = () => {
                     Premium Quality
                   </span>
                 </div>
-                <div className="flex flex-col items-center text-center space-y-2">
+                {/* <div className="flex flex-col items-center text-center space-y-2">
                   <LocalShippingIcon className="text-accent" />
                   <span className="text-xs font-bold text-text-primary uppercase tracking-tighter">
                     Free Shipping
                   </span>
-                </div>
+                </div> */}
                 <div className="flex flex-col items-center text-center space-y-2">
                   <HistoryIcon className="text-accent" />
                   <span className="text-xs font-bold text-text-primary uppercase tracking-tighter">

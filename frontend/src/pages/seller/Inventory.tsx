@@ -224,9 +224,9 @@ const Inventory: React.FC = () => {
                         </div>
                       ) : (
                         <span
-                          className={`text-sm font-bold ${product.stock < 5 ? "text-error" : "text-text-primary"}`}
+                          className={`text-sm font-bold ${product?.stock < 5 ? "text-error" : "text-text-primary"}`}
                         >
-                          {product.stock} units
+                          {product?.stock} units
                         </span>
                       )}
                     </td>

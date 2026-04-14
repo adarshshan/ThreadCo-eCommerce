@@ -1,4 +1,4 @@
-import { UserDocument, UserModel } from "../models/UserSchema";
+import { Address, UserDocument, UserModel } from "../models/UserSchema";
 import { connectToDatabase } from "../config/database";
 
 export interface IUserRepository {
@@ -21,6 +21,23 @@ export interface IUserRepository {
     productId: string,
   ): Promise<UserDocument | null>;
   countAll(): Promise<number>;
+
+  // Address methods
+  addAddress(userId: string, address: Address): Promise<UserDocument | null>;
+  getAddresses(userId: string): Promise<Address[]>;
+  updateAddress(
+    userId: string,
+    addressId: string,
+    address: Partial<Address>,
+  ): Promise<UserDocument | null>;
+  deleteAddress(
+    userId: string,
+    addressId: string,
+  ): Promise<UserDocument | null>;
+  setDefaultAddress(
+    userId: string,
+    addressId: string,
+  ): Promise<UserDocument | null>;
 }
 
 export class UserRepository implements IUserRepository {
@@ -138,5 +155,94 @@ export class UserRepository implements IUserRepository {
       }
       throw error;
     }
+  }
+
+  // Address Implementation
+  async addAddress(
+    userId: string,
+    address: Address,
+  ): Promise<UserDocument | null> {
+    const user = await UserModel.findById(userId);
+    if (!user) return null;
+
+    // If it's the first address, make it default
+    if (user.addresses.length === 0) {
+      address.isDefault = true;
+    } else if (address.isDefault) {
+      // If new address is set as default, unset others
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    user.addresses.push(address);
+    return await user.save();
+  }
+
+  async getAddresses(userId: string): Promise<Address[]> {
+    const user = await UserModel.findById(userId).select("addresses").exec();
+    return user?.addresses || [];
+  }
+
+  async updateAddress(
+    userId: string,
+    addressId: string,
+    addressData: Partial<Address>,
+  ): Promise<UserDocument | null> {
+    const user = await UserModel.findById(userId);
+    if (!user) return null;
+
+    const addressIndex = user.addresses.findIndex(
+      (a) => (a as any)._id.toString() === addressId,
+    );
+    if (addressIndex === -1) return null;
+
+    if (addressData.isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    const currentAddress = user.addresses[addressIndex] as any;
+    user.addresses[addressIndex] = {
+      ...currentAddress?.toObject(),
+      ...addressData,
+    } as any;
+
+    return await user.save();
+  }
+
+  async deleteAddress(
+    userId: string,
+    addressId: string,
+  ): Promise<UserDocument | null> {
+    const user = await UserModel.findById(userId);
+    if (!user) return null;
+
+    const addressToDelete = user.addresses.find(
+      (a) => (a as any)._id.toString() === addressId,
+    );
+    if (!addressToDelete) return null;
+
+    user.addresses = user.addresses.filter(
+      (a) => (a as any)._id.toString() !== addressId,
+    ) as any;
+
+    // If we deleted the default address and there are other addresses, make the first one default
+    if (addressToDelete.isDefault && user.addresses.length > 0) {
+      user.addresses[0].isDefault = true;
+    }
+
+    return await user.save();
+  }
+
+  async setDefaultAddress(
+    userId: string,
+    addressId: string,
+  ): Promise<UserDocument | null> {
+    const user = await UserModel.findById(userId);
+    if (!user) return null;
+
+    user.addresses.forEach((a) => {
+      a.isDefault = (a as any)._id.toString() === addressId;
+    });
+
+    return await user.save();
   }
 }

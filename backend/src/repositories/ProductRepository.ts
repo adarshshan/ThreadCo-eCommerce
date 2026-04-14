@@ -124,7 +124,7 @@ export class ProductRepository implements IProductRepository {
       .populate("category", "name")
       .populate("sellerId", "name email")
       .select(
-        "_id name price images category stock hasSizes sizes sellerId weight",
+        "_id name price images category stock hasSizes sizes sellerId weight description",
       )
       .sort(sortOption)
       .lean();
