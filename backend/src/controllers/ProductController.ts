@@ -21,11 +21,13 @@ export class ProductController {
 
       const { products, totalItems } =
         await this.productService.getAllProducts(filters);
+      const totalPages = Math.ceil(totalItems / limit);
       res.json({
         products,
         totalItems,
         currentPage: page,
-        totalPages: Math.ceil(totalItems / limit),
+        totalPages,
+        hasMore: page < totalPages,
       });
     } catch (error) {
       res.status(500).json({ message: "Error fetching products" });

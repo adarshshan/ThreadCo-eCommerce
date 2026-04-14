@@ -78,6 +78,7 @@ export const getProducts = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const params = new URLSearchParams();
   if (filters) {
@@ -151,6 +152,7 @@ export const getUsers = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const response = await axios.get(
     `${VITE_API_URL}/users?page=${page}&limit=${limit}`,
@@ -293,6 +295,7 @@ export const getMyOrders = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const response = await axios.get(
     `${VITE_API_URL}/orders/myorders?page=${page}&limit=${limit}`,
@@ -334,6 +337,7 @@ export const getAllOrders = async (
   totalItems: number;
   currentPage: number;
   totalPages: number;
+  hasMore: boolean;
 }> => {
   const response = await axios.get(
     `${VITE_API_URL}/orders?page=${page}&limit=${limit}`,

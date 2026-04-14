@@ -62,11 +62,13 @@ export class OrderController {
         page,
         limit,
       );
+      const totalPages = Math.ceil(totalItems / limit);
       res.json({
         orders,
         totalItems,
         currentPage: page,
-        totalPages: Math.ceil(totalItems / limit),
+        totalPages,
+        hasMore: page < totalPages,
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
