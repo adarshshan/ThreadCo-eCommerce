@@ -20,6 +20,25 @@ export const generateSitemap = async (req: Request, res: Response) => {
       "/login",
     ];
 
+    const escapeXml = (unsafe: string) => {
+      return unsafe.replace(/[<>&'"]/g, (c) => {
+        switch (c) {
+          case "<":
+            return "&lt;";
+          case ">":
+            return "&gt;";
+          case "&":
+            return "&amp;";
+          case "'":
+            return "&apos;";
+          case '"':
+            return "&quot;";
+          default:
+            return c;
+        }
+      });
+    };
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
 
@@ -27,7 +46,7 @@ export const generateSitemap = async (req: Request, res: Response) => {
     staticPages.forEach((page) => {
       xml += `
   <url>
-    <loc>${baseUrl}${page}</loc>
+    <loc>${escapeXml(`${baseUrl}${page}`)}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`;
@@ -37,7 +56,7 @@ export const generateSitemap = async (req: Request, res: Response) => {
     products.forEach((product) => {
       xml += `
   <url>
-    <loc>${baseUrl}/product/${product?.slug}</loc>
+    <loc>${escapeXml(`${baseUrl}/product/${product?.slug}`)}</loc>
     <lastmod>${product?.updatedAt ? new Date(product?.updatedAt).toISOString() : new Date().toISOString()}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -48,7 +67,7 @@ export const generateSitemap = async (req: Request, res: Response) => {
     categories.forEach((category) => {
       xml += `
   <url>
-    <loc>${baseUrl}/category/${category?.slug}</loc>
+    <loc>${escapeXml(`${baseUrl}/category/${category?.slug}`)}</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>`;
