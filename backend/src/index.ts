@@ -69,7 +69,7 @@ app.get("/robots.txt", (req, res) => {
   res.type("text/plain");
   res.send(`User-agent: *
 Allow: /
-  Sitemap: https://www.backend.threadco.online/sitemap.xml`);
+  Sitemap: https://www.api.threadco.online/sitemap.xml`);
 });
 
 // Start Server
