@@ -46,7 +46,7 @@ const Profile: React.FC = () => {
     {
       label: "Returns & Exchanges",
       icon: <RepeatIcon className="text-orange-500" />,
-      path: "/return&exchange",
+      path: "/return-and-exchange",
       description: "Track your returns and replacements",
     },
     {

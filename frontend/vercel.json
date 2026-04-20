@@ -1,3 +1,7 @@
 {
-  "rewrites": [{ "source": "/:path*", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://www.api.threadco.online/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "https://www.api.threadco.online/robots.txt" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
 }

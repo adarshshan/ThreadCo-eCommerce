@@ -377,8 +377,8 @@ const ProductList: React.FC = () => {
         }
         description={
           activeCategory
-            ? `Explore our ${activeCategory.name} collection. High-quality and stylish products for Men, Women and Kids.`
-            : "Discover our latest styles and seasonal favorites designed for comfort and play."
+            ? `Explore our ${activeCategory.name} collection. High-quality and stylish products for Men and Women.`
+            : "Discover the latest trends in men's fashion and stylish clothing for women."
         }
         url={slug ? `/category/${slug}` : "/products"}
       />
@@ -464,7 +464,7 @@ const ProductList: React.FC = () => {
                             <div
                               key={product?._id}
                               onClick={() => {
-                                navigate(`/product/${product?._id}`);
+                                navigate(`/product/${product?.slug || product?._id}`);
                                 setShowDropdown(false);
                               }}
                               className="flex items-center gap-3 p-2 hover:bg-surface-hover rounded-lg cursor-pointer transition-colors"

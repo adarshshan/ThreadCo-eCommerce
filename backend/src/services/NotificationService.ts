@@ -219,7 +219,7 @@ class NotificationService {
       if (!transporter) return;
 
       const adminEmailConfig = process.env.ADMIN_EMAIL || "";
-      if (!adminEmailConfig || adminEmailConfig === "admin@kidsown.com") {
+      if (!adminEmailConfig || adminEmailConfig === "admin@threadco.online") {
         console.warn("Admin email missing or default.");
         return;
       }

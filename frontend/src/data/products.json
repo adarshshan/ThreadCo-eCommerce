@@ -1,49 +1,49 @@
 [
   {
     "_id": 1,
-    "name": "Cute Floral Dress",
+    "name": "Men's Classic Black T-Shirt",
     "price": 29.99,
     "images": ["checkblack.jpg", "checkshirt.jpg", "skyblue.jpg"]
   },
   {
     "_id": 2,
-    "name": "Teddy Bear Backpack",
+    "name": "Men's Slim Fit Denim Shirt",
     "price": 19.99,
     "images": ["checkshirt.jpg", "skyblue.jpg", "yellowdress.jpg"]
   },
   {
     "_id": 3,
-    "name": "Star Print T-Shirt",
+    "name": "Women's Floral Summer Dress",
     "price": 14.99,
     "images": ["skyblue.jpg", "yellowdress.jpg", "checkblack.jpg"]
   },
   {
     "_id": 4,
-    "name": "Rainbow Sneakers",
+    "name": "Unisex Modern Sneakers",
     "price": 34.99,
     "images": ["yellowdress.jpg", "checkblack.jpg", "checkshirt.jpg"]
   },
   {
     "_id": 5,
-    "name": "Cute Floral Dress",
+    "name": "Men's Premium Cotton Hoodie",
     "price": 29.99,
     "images": ["checkblack.jpg", "checkshirt.jpg", "skyblue.jpg"]
   },
   {
     "_id": 6,
-    "name": "Teddy Bear Backpack",
+    "name": "Women's Elegant Evening Gown",
     "price": 19.99,
     "images": ["checkshirt.jpg", "skyblue.jpg", "yellowdress.jpg"]
   },
   {
     "_id": 7,
-    "name": "Star Print T-Shirt",
+    "name": "Men's Formal Leather Belt",
     "price": 14.99,
     "images": ["skyblue.jpg", "yellowdress.jpg", "checkblack.jpg"]
   },
   {
     "_id": 8,
-    "name": "Rainbow Sneakers",
+    "name": "Women's Casual Canvas Shoes",
     "price": 34.99,
     "images": ["yellowdress.jpg", "checkblack.jpg", "checkshirt.jpg"]
   }

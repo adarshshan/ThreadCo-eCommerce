@@ -108,7 +108,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/return&exchange",
+        path: "/return-and-exchange",
         element: (
           <Suspense fallback={<Loading />}>
             <ReturnAndExchange />

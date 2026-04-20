@@ -21,10 +21,11 @@ const SEO: React.FC<SEOProps> = ({
   schema,
 }) => {
   const siteName = "ThreadCo";
-  const fullTitle = title ? `${title} | ${siteName}` : siteName;
+  const tagline = "Modern Men's & Women's Fashion";
+  const fullTitle = title ? `${title} | ${siteName}` : `${siteName} | ${tagline}`;
   const defaultDescription =
-    "Shop the latest fashion, clothing, and accessories for men, women, and kids at ThreadCo. Discover trending styles, premium quality products, and great deals with fast delivery and easy returns.";
-  const siteUrl = "https://www.threadco.online"; // Update this to your actual production URL
+    "Discover trendy men's fashion and stylish apparel for women at ThreadCo. Shop high-quality clothing, modern styles, and affordable outfits designed for everyday wear.";
+  const siteUrl = "https://www.threadco.online"; // Ensure this matches your production domain
   const currentUrl = url ? `${siteUrl}${url}` : siteUrl;
 
   return (
