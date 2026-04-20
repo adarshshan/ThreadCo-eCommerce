@@ -68,7 +68,7 @@ const ContactUs: React.FC = () => {
     <div className="min-h-screen bg-background py-5 sm:py-12 px-4 sm:px-6 lg:px-8">
       <SEO
         title="Contact Us"
-        description="Get in touch with ThreadCo. We're here to help with any questions about our products or your order."
+        description="Have questions? Contact ThreadCo support for help with your orders, returns, or any other inquiries about our men's and women's fashion collections."
         url="/contact"
       />
       <div className="max-w-7xl mx-auto">
@@ -77,7 +77,7 @@ const ContactUs: React.FC = () => {
             Contact Us
           </h1>
           <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-            Have questions about our products or your order? We're here to help!
+            Whether you have a question about our collections, orders, or just want to say hi, we're here to help.
           </p>
         </div>
 
@@ -100,7 +100,7 @@ const ContactUs: React.FC = () => {
                     </p>
                     <p className="text-text-secondary">+91 7356683993</p>
                     <p className="text-text-secondary">
-                      1-800-KIDS-OWN (Toll Free)
+                      1-800-THREADCO (Toll Free)
                     </p>
                   </div>
                 </div>

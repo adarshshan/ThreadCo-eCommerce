@@ -70,7 +70,7 @@ const ProductDetails: React.FC = () => {
       description: product?.description,
       brand: {
         "@type": "Brand",
-        name: product?.brand || "Kids Own",
+        name: product?.brand || "ThreadCo",
       },
       offers: {
         "@type": "Offer",

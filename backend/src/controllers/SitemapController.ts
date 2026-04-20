@@ -16,8 +16,10 @@ export const generateSitemap = async (req: Request, res: Response) => {
       "",
       "/products",
       "/contact",
-      "/return&exchange",
+      "/return-and-exchange",
       "/login",
+      "/wishlist",
+      "/cart",
     ];
 
     const escapeXml = (unsafe: string) => {

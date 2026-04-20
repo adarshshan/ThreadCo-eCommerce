@@ -231,7 +231,7 @@ const DropdownMenu = () => {
             Contact Support
           </MenuItem>
 
-          <MenuItem onClick={() => handleItemClick("/return&exchange")}>
+          <MenuItem onClick={() => handleItemClick("/return-and-exchange")}>
             <ListItemIcon>
               <SwapHoriz fontSize="small" />
             </ListItemIcon>

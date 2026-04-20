@@ -379,7 +379,7 @@ const OrderDetails: React.FC = () => {
                 {order?.status === "Delivered" && (
                   <button
                     onClick={() =>
-                      navigate("/return&exchange", {
+                      navigate("/return-and-exchange", {
                         state: { orderId: order?._id },
                       })
                     }

@@ -28,7 +28,7 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title="Home"
-        description="ThreadCo is your go-to online store for fashion, clothing, and accessories for men, women, and kids. Explore trending styles, premium quality products, and great deals with fast delivery and easy returns."
+        description="ThreadCo is your ultimate destination for men's fashion and stylish women's apparel. Discover premium quality clothing, trending styles, and exclusive deals with fast delivery."
         url="/"
       />
       <section className="relative overflow-hidden">
@@ -36,7 +36,7 @@ const HomePage: React.FC = () => {
       </section>
       <ProductCarousel
         title="New Arrivals"
-        subtitle="Check out our latest collection of premium kids wear"
+        subtitle="Explore our latest collection of premium men's and women's wear"
         products={newArrivals}
         loading={loading}
       />
