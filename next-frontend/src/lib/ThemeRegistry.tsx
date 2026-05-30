@@ -1,14 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { CacheProvider } from "@emotion/react";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useServerInsertedHTML } from "next/navigation";
-import { theme } from "./theme";
+import { getAppTheme } from "./theme";
 import createEmotionCache from "./createEmotionCache";
+import { useStore } from "@/src/store/useStore";
 
 export default function ThemeRegistry({ children }: { children: React.ReactNode }) {
+  const mode = useStore((state) => state.theme);
+  const theme = useMemo(() => getAppTheme(mode), [mode]);
+
   const [{ cache, flush }] = React.useState(() => {
     const cache = createEmotionCache();
     cache.compat = true;

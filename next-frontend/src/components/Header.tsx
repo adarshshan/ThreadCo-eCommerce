@@ -4,21 +4,31 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/src/store/useStore";
 import { IconButton } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import DropdownMenu from "@/src/components/DropdownMenu";
 import HeaderDrawer from "@/src/components/HeaderDrawer";
 import ThemeToggle from "@/src/components/ThemeToggle";
+import logoImg from "../../public/logoImg.png";
+import logoImgwhite from "../../public/logoImgforwhite.png";
+import Image from "next/image";
 
 const Header: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   // Use specific selectors to prevent re-renders on unrelated store changes
+  const theme = useStore((state) => state.theme);
   const cartLength = useStore((state) => state.cart.length);
   const wishlistLength = useStore((state) => state.wishlist.length);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -39,7 +49,19 @@ const Header: React.FC = () => {
             href="/"
             className="text-2xl md:text-3xl font-serif font-black text-[var(--color-text-Header)] tracking-tighter  hover:text-accent transition-colors"
           >
-            Thread<span className="text-accent">Co</span>
+            {!mounted || theme === "dark" ? (
+              <Image
+                src={logoImg}
+                alt="The logo image"
+                className="w-32 sm:w-44"
+              />
+            ) : (
+              <Image
+                src={logoImgwhite}
+                alt="The logo image"
+                className="w-32 sm:w-44"
+              />
+            )}
           </Link>
         </div>
 
