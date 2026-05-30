@@ -218,13 +218,15 @@ export const useStore = create<StoreState>()(
         }
       },
 
-      theme: "light",
+      theme: "dark",
       setTheme: (theme) => {
         set({ theme });
-        if (theme === "light") {
-          document.documentElement.setAttribute("data-theme", "light");
-        } else {
-          document.documentElement.removeAttribute("data-theme");
+        if (typeof window !== "undefined") {
+          if (theme === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+          } else {
+            document.documentElement.removeAttribute("data-theme");
+          }
         }
       },
       toggleTheme: () => {
@@ -241,7 +243,7 @@ export const useStore = create<StoreState>()(
         return () => {
           state?.setHasHydrated(true);
           // Apply theme after hydration
-          const themeToApply = state?.theme || "light";
+          const themeToApply = state?.theme || "dark";
           if (themeToApply === "light") {
             document.documentElement.setAttribute("data-theme", "light");
           } else {
