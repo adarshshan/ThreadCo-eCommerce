@@ -50,11 +50,18 @@ const Header: React.FC = () => {
             className="text-2xl md:text-3xl font-serif font-black text-[var(--color-text-Header)] tracking-tighter  hover:text-accent transition-colors"
           >
             {!mounted || theme === "dark" ? (
-              <Image src={logoImg} alt="The logo image" className="w-44" />
+              <Image
+                src={logoImg}
+                alt="The logo image"
+                className="w-32 sm:w-44"
+              />
             ) : (
-              <Image src={logoImgwhite} alt="The logo image" className="w-44" />
+              <Image
+                src={logoImgwhite}
+                alt="The logo image"
+                className="w-32 sm:w-44"
+              />
             )}
-
           </Link>
         </div>
 

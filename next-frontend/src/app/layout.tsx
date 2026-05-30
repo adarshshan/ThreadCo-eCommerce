@@ -31,6 +31,10 @@ export const metadata: Metadata = {
     "online clothing store",
     "ThreadCo",
   ],
+  icons: {
+    icon: "/squareLogo.png",
+    apple: "/squareLogo.png",
+  },
   alternates: {
     canonical: "./",
   },
@@ -71,11 +75,8 @@ const jsonLd = {
   "@type": "Organization",
   name: "ThreadCo",
   url: "https://threadco.online",
-  logo: "https://threadco.online/logo.png",
-  sameAs: [
-    "https://facebook.com/threadco",
-    "https://instagram.com/threadco",
-  ],
+  logo: "https://threadco.online/log.png",
+  sameAs: ["https://facebook.com/threadco", "https://instagram.com/threadco"],
   contactPoint: {
     "@type": "ContactPoint",
     telephone: "+91-XXXXXXXXXX",
